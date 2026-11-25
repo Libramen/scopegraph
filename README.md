@@ -8,7 +8,7 @@ It's yours: MIT licensed and self-hosted, with no platform in the middle and no 
 
 ## What an agent experiences
 
-A buyer's agent calls the `scope_offering` tool. Every call returns exactly one of five outcomes — a question, a refusal, a quote, a caller bug, or not-found — never a partial answer:
+A buyer's agent calls the `scope_offering` tool. Every call returns exactly one of five outcomes — the next question, a refusal, a quote, an input error, or unavailable — never a partial answer:
 
 ```text
 Agent        Book a group surf lesson for this Saturday.
@@ -26,6 +26,44 @@ Agent        pays the quote: create_payment_link → buyer pays on Stripe → yo
 ```
 
 The engine asks because it refuses to guess: a rule whose answer is missing is *unknown*, so it asks the buyer instead of blocking or assuming. Money is computed with exact arithmetic and fail-closed pricing — if a price can't be computed it errors, it never silently under-charges.
+
+## Quickstart
+
+Needs Node 22.12 or newer (`.nvmrc` included). Click **"Use this template"** to get your own private repository, so your prices and policies stay private, then:
+
+```bash
+npm install
+
+# try the starter business — it ships green:
+npm run validate                                # catalog compiles clean
+npm run scenarios                               # its tests pass
+npm run simulate -- surf-lesson --interactive   # play the buyer in your terminal
+npm run dev                                     # serve HTTP + MCP on :3000, reloads on save
+
+# make it yours — replaces catalog/ and scenarios/ with a blank business:
+npm run sg -- init --name "Harbor City Cleaning"
+```
+
+The starter is **Sea Stack Surf School**, a fictional surf school in Pacifica, CA: three offerings in `catalog/`, tested by `scenarios/`. `init` replaces it with your business; a copy stays in [`examples/sea-stack-surf/`](examples/sea-stack-surf/).
+
+`npm run sg -- <command>` runs the scopegraph CLI (`init`, `validate`, `test`, `simulate`, `graph`, `serve`, `doctor`, `orders`, …). Something off? `npm run sg -- doctor` checks your setup and says what's wrong.
+
+### Connect it
+
+Once it's running (at `http://localhost:3000` locally, or your deployed URL):
+
+- **AI agents:** add `<your-url>/mcp` as an MCP server. For Claude Desktop, `npm run --silent sg -- mcp-config` prints a ready-to-paste config.
+- **Your website:** `GET <your-url>/api/offerings`, then `POST <your-url>/api/offerings/<id>/scope` until you get a quote.
+
+Details: [`docs/connecting.md`](docs/connecting.md).
+
+## Model your business with your coding agent
+
+Point your coding agent at [`AGENTS.md`](AGENTS.md). It contains the whole loop: interview you, write scenarios from your own words first, then the catalog YAML, then iterate `npm run validate` / `npm run scenarios` / `npm run simulate` until green. Sample prompt:
+
+> Read AGENTS.md. Interview me about my business — what we sell, what we need to know about a buyer before accepting, what we refuse, and our real prices. Then replace catalog/ and scenarios/ with my business (don't invent numbers or policies), and keep validate + scenarios green. Finish by summarising what buyers will be asked, refused, and charged.
+
+[`examples/`](examples/) has more businesses — tours, wellness, consulting, pet services and more — showing how the format handles different kinds of pricing.
 
 ## What buyers can see
 
@@ -96,85 +134,30 @@ The deeper machinery — server-side facts buyers must not claim (tide, capacity
 The catalog compiles to a graph you can inspect without starting the server — as a flowchart, or as the exact JSON/YAML the engine evaluates:
 
 ```bash
-npm run sg -- graph --offering first-wave-weekend             # mermaid flowchart
-npm run --silent sg -- graph --format json                     # the compiled graph, for tools and agents
-npm run sg -- graph --format yaml --out graph.yaml             # …as YAML, to a file
+npm run sg -- graph --offering surf-lesson            # mermaid flowchart
+npm run --silent sg -- graph --format json            # the compiled graph, for tools and agents
+npm run sg -- graph --format yaml --out graph.yaml    # …as YAML, to a file
 ```
 
-The starter's weekend package — its own questions, a choice group, a weekend-only rule, a rule that requires a foam board for first-timers, a question only asked when hiring a suit, and the policies it inherits from the two lessons it contains:
+The starter's group lesson — its three questions and the two refusal rules behind the transcript above:
 
 ```mermaid
 flowchart TD
 %% Sea Stack Surf School (USD)
-  o_first_wave_weekend[["first-wave-weekend · First Wave Weekend · package"]]
-  p_first_wave_weekend_suit_size("suit_size · select · required")
-  o_first_wave_weekend -.-> p_first_wave_weekend_suit_size
-  p_first_wave_weekend_surfers("surfers · integer · required")
-  o_first_wave_weekend -.-> p_first_wave_weekend_surfers
-  p_first_wave_weekend_cold_water_ok("cold_water_ok · boolean · required")
-  o_first_wave_weekend -.-> p_first_wave_weekend_cold_water_ok
-  p_first_wave_weekend_surf_history("surf_history · select · required")
-  o_first_wave_weekend -.-> p_first_wave_weekend_surf_history
-  g_first_wave_weekend_hire["hire · multi"]
-  o_first_wave_weekend --> g_first_wave_weekend_hire
-  opt_first_wave_weekend_hire_foam_board("foam_board — Foam board")
-  g_first_wave_weekend_hire --> opt_first_wave_weekend_hire_foam_board
-  opt_first_wave_weekend_hire_hooded_suit("hooded_suit — 5/4 hooded suit")
-  g_first_wave_weekend_hire --> opt_first_wave_weekend_hire_hooded_suit
-  r_first_wave_weekend_first_wave_weekend_weekends_only{"first-wave-weekend.weekends_only · block: First Wave Weekend only runs on Sat..."}
-  o_first_wave_weekend --> r_first_wave_weekend_first_wave_weekend_weekends_only
-  r_first_wave_weekend_first_wave_weekend_first_timers_need_foam_boards{"first-wave-weekend.first_timers_need_foam_boards · require hire.foam_board<br/>First-timers learn on our foam boards, so add foam board hire"}
-  o_first_wave_weekend --> r_first_wave_weekend_first_wave_weekend_first_timers_need_foam_boards
-  r_first_wave_weekend_first_wave_weekend_first_timers_need_foam_boards -->|require| opt_first_wave_weekend_hire_foam_board
-  r_first_wave_weekend_first_wave_weekend_size_when_suit_hired{"first-wave-weekend.size_when_suit_hired · ask suit_size"}
-  o_first_wave_weekend --> r_first_wave_weekend_first_wave_weekend_size_when_suit_hired
-  r_first_wave_weekend_first_wave_weekend_size_when_suit_hired -->|ask| p_first_wave_weekend_suit_size
-  r_first_wave_weekend_surf_lesson_cold_water{"surf-lesson.cold_water · block: The water at Linda Mar stays between 50 and 5..."}
-  o_first_wave_weekend --> r_first_wave_weekend_surf_lesson_cold_water
-  r_first_wave_weekend_surf_lesson_tide_window{"surf-lesson.tide_window · block: We don't teach when the tide is above 5.5 ft..."}
-  o_first_wave_weekend --> r_first_wave_weekend_surf_lesson_tide_window
-  r_first_wave_weekend_private_lesson_up_to_two{"private-lesson.up_to_two · block: Private sessions take one or two surfers; g..."}
-  o_first_wave_weekend --> r_first_wave_weekend_private_lesson_up_to_two
-  r_first_wave_weekend_private_lesson_cold_water{"private-lesson.cold_water · block: The water at Linda Mar stays between 50 an..."}
-  o_first_wave_weekend --> r_first_wave_weekend_private_lesson_cold_water
-  r_first_wave_weekend_private_lesson_tide_window{"private-lesson.tide_window · block: We don't teach when the tide is above 5.5..."}
-  o_first_wave_weekend --> r_first_wave_weekend_private_lesson_tide_window
   o_surf_lesson["surf-lesson · Linda Mar Group Lesson · product"]
-  o_first_wave_weekend ==>|contains ×1| o_surf_lesson
-  o_private_lesson["private-lesson · Private Surf Session · product"]
-  o_first_wave_weekend ==>|contains ×1| o_private_lesson
+  p_surf_lesson_surfers("surfers · integer · required")
+  o_surf_lesson -.-> p_surf_lesson_surfers
+  p_surf_lesson_cold_water_ok("cold_water_ok · boolean · required")
+  o_surf_lesson -.-> p_surf_lesson_cold_water_ok
+  p_surf_lesson_surf_history("surf_history · select · required")
+  o_surf_lesson -.-> p_surf_lesson_surf_history
+  r_surf_lesson_surf_lesson_cold_water{"surf-lesson.cold_water · block: The water at Linda Mar stays between 50 and 5..."}
+  o_surf_lesson --> r_surf_lesson_surf_lesson_cold_water
+  r_surf_lesson_surf_lesson_tide_window{"surf-lesson.tide_window · block: We don't teach when the tide is above 5.5 ft..."}
+  o_surf_lesson --> r_surf_lesson_surf_lesson_tide_window
 ```
 
 Catalog and scenario files carry a `# yaml-language-server: $schema=…` line pointing at the JSON Schemas in [`schema/`](schema/), so the VS Code YAML extension checks them as you type.
-
-## Quickstart
-
-Needs Node 22 or newer (`.nvmrc` included).
-
-Start with your own copy: **"Use this template"** gives you a private repository, so your prices and policies stay private.
-
-```bash
-# 1. in your copy:
-npm install
-
-# 2. try the starter business (Sea Stack Surf School) — it ships green:
-npm run validate                                # catalog compiles clean
-npm run scenarios                               # its executable specs pass
-npm run simulate -- surf-lesson --interactive   # walk the question flow as a buyer
-npm run dev                                     # serve it: HTTP + MCP on :3000, reloads catalog/ on save
-
-# 3. make it yours — replaces catalog/ and scenarios/ with a blank business:
-npm run sg -- init --name "Harbor City Cleaning"
-```
-
-`npm run sg -- <command>` runs the scopegraph CLI (`init`, `validate`, `test`, `simulate`, `serve`, `doctor`, `orders`, …). Something off? `npm run sg -- doctor` checks your setup and says what's wrong.
-
-Connect:
-
-- **Your website** — `GET http://localhost:3000/api/offerings`, then `POST /api/offerings/<id>/scope`: [`docs/connecting.md`](docs/connecting.md)
-- **AI agents** — MCP (Streamable HTTP) at `http://localhost:3000/mcp`; for Claude Desktop, `npm run --silent sg -- mcp-config` prints a ready-to-paste config: [`docs/connecting.md`](docs/connecting.md)
-
-The starter business is **Sea Stack Surf School**, a fictional surf school on Linda Mar beach in Pacifica, California (`catalog/`, scoped by `scenarios/`); a copy lives in [`examples/sea-stack-surf/`](examples/sea-stack-surf/) so `init` never loses it. More example businesses in [`examples/`](examples/) (see [`examples/README.md`](examples/README.md)) show how the format handles other kinds of business: read them to learn the format, not as templates.
 
 ## Deploy
 
@@ -184,17 +167,15 @@ scopegraph is one long-running Node process, shipped as a Docker image:
 docker build -t my-scopegraph . && docker run -p 3000:3000 my-scopegraph
 ```
 
-Any host or platform that runs a Dockerfile works. Behind a proxy (a platform load balancer, or Cloudflare in front via Tunnel or proxied DNS), set `TRUST_PROXY` to the number of proxies so rate limits key on each buyer's IP; Cloudflare Workers and Pages can't run it. Set `PUBLIC_URL` to your service's URL and add `https://<your-host>/mcp` as a remote MCP connector in Claude or any MCP client. Details and payment volumes: [`docs/deploy.md`](docs/deploy.md).
+- **Where:** any host or platform that runs a Dockerfile. Cloudflare Workers and Pages can't run it; Cloudflare in front (Tunnel or proxied DNS) works.
+- **Settings:** set `PUBLIC_URL` to your service's URL. Behind a proxy or load balancer, set `TRUST_PROXY` to the number of proxies in front, so rate limits apply per buyer.
+- **Connect:** add `https://<your-host>/mcp` as a remote MCP connector in Claude or any MCP client.
 
-## Model your business with your coding agent
-
-Point your coding agent at [`AGENTS.md`](AGENTS.md). It contains the whole loop: interview you, write scenarios from your own words first, then the catalog YAML, then iterate `npm run validate` / `npm run scenarios` / `npm run simulate` until green. Sample prompt:
-
-> Read AGENTS.md. Interview me about my business — what we sell, what we need to know about a buyer before accepting, what we refuse, and our real prices. Then replace catalog/ and scenarios/ with my business (don't invent numbers or policies), and keep validate + scenarios green. Finish by summarising what buyers will be asked, refused, and charged.
+Details, including the persistent disk payments need: [`docs/deploy.md`](docs/deploy.md).
 
 ## Taking payments
 
-Add a Stripe key and every qualified quote becomes payable through one of four **doors**: a hosted payment link for humans, agent-native checkout (UCP/ACP) for AI buyers, or machine payments (MPP) for autonomous agents. By default the buyer's card is only **held** — you approve or reject (`npm run sg -- orders approve ord_…`) before any money moves. Payments are off until you configure Stripe, and change nothing about scoping. Full setup: [`docs/payments.md`](docs/payments.md).
+Add a Stripe key and every qualified quote becomes payable in one of four ways (the docs call them **doors**): a hosted payment link for humans, agent checkout (UCP or ACP) for AI buyers, or machine payments (MPP) for autonomous agents. By default the buyer's card is only **held** — you approve or reject (`npm run sg -- orders approve ord_…`) before any money moves. Payments are off until you configure Stripe and change nothing about scoping. Full setup: [`docs/payments.md`](docs/payments.md).
 
 ## Going further
 
@@ -210,8 +191,8 @@ Add a Stripe key and every qualified quote becomes payable through one of four *
 
 ```
 catalog/            your business: business.yaml + offerings/*.yaml
-scenarios/          executable specs: inputs -> expected outcome
-examples/           complete example businesses for learning the format (incl. a copy of the starter)
+scenarios/          tests for your catalog: inputs -> expected outcome
+examples/           more example businesses (incl. a copy of the starter)
 docs/               modeling guide, format reference, connecting, payments, deploy
 schema/             JSON Schemas for catalog and scenario files (editor validation)
 src/                the engine (rules, pricing, compile, server, CLI) — you rarely touch it
