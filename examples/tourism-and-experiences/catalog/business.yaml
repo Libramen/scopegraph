@@ -1,0 +1,22 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the tourism & experiences examples. When you copy an
+# offering into your own catalog, bring over what it reads from here: the
+# peak seasons (boat-charter, three-night-adventure-trip) and a taxRate if
+# your quotes are taxed.
+name: Example — Tourism & experiences
+description: >
+  Illustrative tour and activity operator: private and small-group tours,
+  an adventure activity, a boat charter, a tasting room and a multi-day
+  trip. Prices are examples only.
+currency: USD
+timezone: America/Los_Angeles
+
+# Illustrative sales tax. Pass-through lines (park entry, museum tickets)
+# are marked `taxable: false` in the offerings, so they stay out of it.
+taxRate: 7
+
+# `isPeak` is TRUE inside either window. MM-DD recurs every year and may
+# wrap the year end.
+seasons:
+  - { name: summer_peak, kind: peak, from: '06-15', to: '09-15', description: Summer high season }
+  - { name: holiday_peak, kind: peak, from: '12-20', to: '01-03', description: Winter holidays }

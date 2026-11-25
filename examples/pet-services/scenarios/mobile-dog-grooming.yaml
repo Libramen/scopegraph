@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $75 bath and tidy for a small dog; size, haircut and add-ons add to it;
+# $20 dematting; +20% on weekends (the whole groom, not travel); $15 travel
+# fee for 10-20 miles; 48 hours notice.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: the bite-history question comes first
+    offering: mobile-dog-grooming
+    date: '2026-03-05'
+    expect:
+      status: needs_input
+      asks: bite_history
+
+  - name: medium dog, full groom and nails, on a Thursday nearby
+    offering: mobile-dog-grooming
+    date: '2026-03-05'
+    answers: { bite_history: false, coat_condition: good, distance_miles: 5 }
+    selections: { dog_size: medium, groom: full_groom, addons: [nail_grind] }
+    expect:
+      status: qualified
+      total: 140 # 75 + 20 medium + 30 full groom + 15 nails
+
+  - name: the same groom on a Saturday pays the weekend rate
+    offering: mobile-dog-grooming
+    date: '2026-03-07'
+    answers: { bite_history: false, coat_condition: good, distance_miles: 5 }
+    selections: { dog_size: medium, groom: full_groom, addons: [nail_grind] }
+    expect:
+      status: qualified
+      total: 168 # 140 + 20%
+      lines:
+        - { label: Weekend appointment, amount: 28 }
+
+  - name: weekend % covers dematting but not the travel fee
+    offering: mobile-dog-grooming
+    date: '2026-03-07'
+    answers: { bite_history: false, coat_condition: light_matting, distance_miles: 15 }
+    selections: { dog_size: large, groom: bath_and_tidy }
+    expect:
+      status: qualified
+      total: 177 # (75 + 40 + 20 dematting) x 1.20 + 15 travel
+      lines:
+        - { label: Weekend appointment, amount: 27 }
+        - { label: Travel (10-20 miles), amount: 15 }
+
+  - name: a dog with a bite history is refused
+    offering: mobile-dog-grooming
+    date: '2026-03-05'
+    answers: { bite_history: true }
+    expect:
+      status: blocked
+      rule: no_bite_history
+
+  - name: a coat matted to the skin is refused
+    offering: mobile-dog-grooming
+    date: '2026-03-05'
+    answers: { bite_history: false, coat_condition: severe_matting }
+    expect:
+      status: blocked
+      rule: no_severe_matting
+
+  - name: outside the 20-mile area is refused
+    offering: mobile-dog-grooming
+    date: '2026-03-05'
+    answers: { bite_history: false, coat_condition: good, distance_miles: 30 }
+    expect:
+      status: blocked
+      rule: service_area
+
+  - name: less than 48 hours notice is too soon
+    offering: mobile-dog-grooming
+    date: '2026-03-04'
+    answers: { bite_history: false, coat_condition: good, distance_miles: 5 }
+    selections: { dog_size: small, groom: bath_and_tidy }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

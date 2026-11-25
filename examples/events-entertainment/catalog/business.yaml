@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the events entertainment examples. When you copy an
+# offering into your own catalog, bring over a `taxRate` that matches where
+# you trade.
+name: Example — Event entertainment & photography
+description: Illustrative catalog of event services (a DJ and event photography). Prices are examples only.
+currency: USD
+timezone: America/Chicago
+
+# Illustrative sales tax. Lines marked `taxable: false` (travel) are left out
+# of the tax base. Check what is taxable where you trade.
+taxRate: 9
+
+# Sent with every qualified quote (never with blocked or needs_input results).
+handoff:
+  url: https://events.example.com/enquire?offering={offering}&{params}
+  message: Send us this quote to hold your date; we confirm availability within one business day.

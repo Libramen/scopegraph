@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Three-night trip: day tour ($139/adult) + zipline ($99/adult) less 10%,
+# child lines from both products, room per adult, 12% peak on the running
+# total, park entry passed through untaxed. Sales tax 7%.
+# 2026-05-12 is off-peak; 2026-07-14 is summer peak.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: two adults, twin share, off-peak
+    offering: three-night-adventure-trip
+    date: '2026-05-12'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 200, waiver_accepted: true }
+    selections: { room_type: twin_share }
+    expect:
+      status: qualified
+      subtotal: 1258.4 # 476 - 47.60 + 780 rooms + 50 park entry
+      tax: 84.59 # 7% of 1208.40
+      total: 1342.99
+      lines:
+        - { id: bundle_discount, amount: -47.6 }
+
+  - name: family of three in peak season
+    offering: three-night-adventure-trip
+    date: '2026-07-14'
+    answers: { adults: 2, children: 1, youngest_child_age: 10, heaviest_rider_lb: 200, waiver_accepted: true }
+    selections: { room_type: twin_share }
+    expect:
+      status: qualified
+      total: 1699.48 # 428.40 + 168 child lines + 780 rooms + 165.17 peak; tax 107.91; + 50 park
+      lines:
+        - { label: Peak season, amount: 165.17 }
+
+  - name: a 7-year-old passes the tour's age rule but not the zipline's
+    offering: three-night-adventure-trip
+    date: '2026-05-12'
+    answers: { adults: 2, children: 1, youngest_child_age: 7 }
+    expect:
+      status: blocked
+      rule: zipline-canopy-tour.min_rider_age
+
+  - name: the zipline waiver flows into the trip
+    offering: three-night-adventure-trip
+    date: '2026-05-12'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 200, waiver_accepted: false }
+    expect:
+      status: blocked
+      rule: waiver
+
+  - name: questions answered - the room is asked
+    offering: three-night-adventure-trip
+    date: '2026-05-12'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 200, waiver_accepted: true }
+    expect:
+      status: needs_input
+      asks: room_type
+
+  - name: arrival inside the 14-day notice window
+    offering: three-night-adventure-trip
+    date: '2026-01-10'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 200, waiver_accepted: true }
+    selections: { room_type: twin_share }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

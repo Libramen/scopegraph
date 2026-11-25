@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Event DJ: $900 for four hours, $175 per extra hour (max 4), add-ons,
+# untaxed travel at $2/mile beyond 30 miles (max 150).
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: six hours with uplighting, 50 miles away
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 2, travel_miles: 50 }
+    selections: { extras: [uplighting] }
+    expect:
+      status: qualified
+      subtotal: 1590 # 900 + 350 extra hours + 300 uplighting + 40 travel (20 × 2)
+      tax: 139.5 # 9% of 1550; travel is untaxed
+      total: 1729.5
+
+  - name: the four-hour package nearby
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 0, travel_miles: 20 }
+    expect:
+      status: qualified
+      total: 981 # 900; tax 81
+
+  - name: the travel distance is asked
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 0 }
+    expect:
+      status: needs_input
+      asks: travel_miles
+
+  - name: ceremony sound and a generator for an outdoor wedding
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 0, travel_miles: 20 }
+    selections: { extras: [ceremony_sound, generator] }
+    expect:
+      status: qualified
+      subtotal: 1325 # 900 + 250 ceremony sound + 175 generator
+      total: 1444.25 # tax 119.25
+
+  - name: 200 miles is beyond the travel radius
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 0, travel_miles: 200 }
+    expect:
+      status: blocked
+      rule: travel_radius
+
+  - name: nine hours of playing time is too long
+    offering: event-dj-entertainment
+    date: '2026-06-13'
+    answers: { added_hours: 5 }
+    expect:
+      status: blocked
+      rule: max_playing_time

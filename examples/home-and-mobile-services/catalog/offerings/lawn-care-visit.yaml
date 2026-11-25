@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: a lawn mowing visit priced by lot-size band, cheaper on a
+# regular schedule. Copy to catalog/offerings/, then change the band
+# prices, the frequency discounts, the add-ons and the 1-acre limit.
+kind: product
+name: Lawn care visit
+description: >
+  Mow, edge and blow for residential lots up to one acre, priced by lot
+  size. Weekly and every-two-weeks customers get a lower rate on the mow;
+  hedge trimming, bed weeding and leaf cleanup are extra.
+category: Outdoor
+keywords: [lawn, mowing, yard, garden, landscaping]
+date: optional # the first visit; nothing is priced by date
+
+price: 45 # a small lot (under 5,000 sq ft)
+
+ask:
+  lot_size:
+    type: select
+    label: How big is the lot?
+    options:
+      - { value: small, label: 'Under 5,000 sq ft' }
+      - { value: medium, label: '5,000 to 10,000 sq ft' }
+      - { value: large, label: '10,000 sq ft to 1 acre' }
+      - { value: over_one_acre, label: Over 1 acre }
+  frequency:
+    type: select
+    label: How often?
+    options:
+      - { value: one_time, label: One time }
+      - { value: every_two_weeks, label: Every two weeks }
+      - { value: weekly, label: Weekly }
+
+choose:
+  extras:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      hedge_trimming: { label: Hedge trimming, price: 35 }
+      weed_beds: { label: Weed flower beds, price: 30 }
+      leaf_cleanup: { label: Leaf cleanup, price: 60 }
+
+rules:
+  - id: max_lot_size
+    when: { lot_size: over_one_acre }
+    block: >
+      Lots over an acre need a site visit before we quote. Email
+      office@homeservices.example with the address.
+
+pricing:
+  # Band uplifts and the frequency discount run before the add-ons
+  # (default order 100), so the discount covers the mow, not the extras.
+  - id: medium_lot
+    label: Medium lot
+    kind: addon
+    amount: 20
+    when: { lot_size: medium }
+    order: 50
+  - id: large_lot
+    label: Large lot
+    kind: addon
+    amount: 45
+    when: { lot_size: large }
+    order: 50
+  - id: weekly_discount
+    label: Weekly schedule discount
+    kind: discount
+    percent: 15
+    when: { frequency: weekly }
+    order: 80
+  - id: biweekly_discount
+    label: Every-two-weeks schedule discount
+    kind: discount
+    percent: 10
+    when: { frequency: every_two_weeks }
+    order: 80

@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Event photography: $275 per hour (2-hour minimum), assistant photographer
+# $125 per hour (required from 150 attendees), album add-ons, 9% tax.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: six hours with an assistant photographer and a layflat album
+    offering: event-photography-coverage
+    date: '2026-04-18'
+    answers: { coverage_hours: 6, attendees: 120 }
+    selections: { extras: [assistant_photographer], album: layflat_album }
+    expect:
+      status: qualified
+      subtotal: 3300 # 1650 coverage + 750 assistant (6 × 125) + 900 album
+      total: 3597 # tax 297
+      lines:
+        - { label: Assistant photographer, amount: 750 }
+
+  - name: a 200-person event is asked to add an assistant photographer
+    offering: event-photography-coverage
+    date: '2026-04-18'
+    answers: { coverage_hours: 5, attendees: 200 }
+    expect:
+      status: needs_input
+      asks: extras
+
+  - name: a 200-person event without an assistant photographer is refused
+    offering: event-photography-coverage
+    date: '2026-04-18'
+    answers: { coverage_hours: 5, attendees: 200 }
+    selections: { extras: [next_day_preview] }
+    expect:
+      status: blocked
+      rule: large_event_assistant
+
+  - name: one hour is under the minimum
+    offering: event-photography-coverage
+    date: '2026-04-18'
+    answers: { coverage_hours: 1 }
+    expect:
+      status: blocked
+      rule: minimum_hours
+
+  - name: more than 12 hours is not a valid answer
+    offering: event-photography-coverage
+    date: '2026-04-18'
+    answers: { coverage_hours: 14 }
+    expect:
+      status: invalid
+      error: answers.coverage_hours

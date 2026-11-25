@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: labor-only moving help (loading, unloading, rearranging): a crew
+# booked by the hour. Copy to catalog/offerings/, then change the hourly crew
+# rates, the 2-hour minimum, the per-flight stairs fee and the refused items.
+kind: product
+name: Moving labor
+description: >
+  A crew of two to four movers to load, unload or rearrange, booked by the
+  hour with a 2-hour minimum. Labor only: you supply the truck. No pianos
+  or safes.
+category: Moving
+keywords: [moving, movers, loading, unloading, labor]
+date: required
+minNoticeHours: 48
+
+# The two-mover crew rate; bigger crews are options priced per hour.
+price:
+  amount: 120
+  per: hours
+
+ask:
+  hours:
+    type: integer
+    label: How many hours do you want to book?
+    min: 1
+    max: 12
+    role: quantity
+  access:
+    type: select
+    label: Access at the harder end of the move
+    options:
+      - { value: ground_level, label: Ground level or driveway }
+      - { value: elevator, label: Elevator }
+      - { value: stairs_only, label: 'Stairs only, no elevator' }
+  flights_of_stairs:
+    # Required, but gated: only asked while access is stairs_only.
+    type: integer
+    label: How many flights of stairs?
+    min: 0
+    max: 10
+  piano_or_safe:
+    type: boolean
+    label: Does the move include a piano, safe or gun cabinet?
+
+choose:
+  crew:
+    label: Crew size
+    mode: single
+    required: true
+    options:
+      two_movers: { label: 2 movers }
+      three_movers: { label: 3 movers, price: { amount: 55, per: hours } }
+      four_movers: { label: 4 movers, price: { amount: 110, per: hours } }
+  extras:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      disassembly: { label: Bed and furniture disassembly and reassembly, price: 40 }
+
+rules:
+  - id: min_hours
+    when: { not: { hours: { gte: 2 } } }
+    block: Moving crews are booked for at least 2 hours.
+  - id: ask_flights
+    when: { access: stairs_only }
+    ask: flights_of_stairs
+  - id: no_specialist_items
+    when: { piano_or_safe: true }
+    block: We don't move pianos, safes or gun cabinets; they need a specialist mover.
+
+pricing:
+  - id: stairs
+    label: Stairs (per flight)
+    kind: surcharge
+    amount: 25
+    per: flights_of_stairs
+    when: { access: stairs_only }
+    reason: Carrying up and down stairs with no elevator

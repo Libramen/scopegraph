@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# A package with no price of its own: it costs what its products cost, plus
+# whatever hire is picked. The products' questions, rules and price lines
+# carry over; their option groups don't, so the hire group lives here along
+# with the rules that read it. Rules both products share (cold_water,
+# tide_window) are reported once, and the private session's two-surfer cap
+# carries over too, so the package is for one or two surfers.
+# The summer surcharge has `basis: base`, so even here it is 20% of the group
+# lesson's price and never touches the private session.
+kind: package
+name: First Wave Weekend
+description: >
+  A group lesson and a private session on the Saturday or Sunday you choose,
+  for one or two surfers. Board and suit hire available; minimum spend $350.
+category: Packages
+keywords: [package, weekend, surf, pacifica]
+date: required
+minNoticeHours: 48
+
+contains:
+  - surf-lesson
+  - private-lesson
+
+ask:
+  suit_size:
+    # Required, but only asked while a hooded suit is hired (the
+    # `size_when_suit_hired` rule below). One size covers the booking; the
+    # description tells the buyer each surfer is fitted on the day.
+    type: select
+    label: Suit size
+    description: One size for the booking; we fit each surfer on the beach.
+    options: [xs, s, m, l, xl, xxl]
+
+# Hire is charged only when picked, once for each surfer.
+choose:
+  hire:
+    label: Board and suit hire
+    description: Charged per surfer for the weekend
+    mode: multi # any number of options
+    required: false
+    options:
+      foam_board:
+        label: Foam board
+        price: { amount: 20, per: surfers }
+      hooded_suit:
+        label: 5/4 hooded suit
+        price: { amount: 30, per: surfers }
+
+rules:
+  - id: weekends_only
+    when: { not: { isWeekend: true } }
+    block: First Wave Weekend only runs on Saturdays and Sundays; choose a weekend date
+  - id: first_timers_need_foam_boards
+    when: { surf_history: first_time } # a question from the group lesson
+    require: hire.foam_board
+    message: First-timers learn on our foam boards, so add foam board hire
+  - id: size_when_suit_hired
+    when: { selected: hire.hooded_suit }
+    ask: suit_size # the size question exists only while a suit is hired
+
+# Quotes below $350 get a line making up the difference. `mode: decline`
+# would refuse them instead.
+minimumSpend:
+  amount: 350
+  mode: top_up

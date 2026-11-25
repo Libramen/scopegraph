@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: drop-in pet sitting visits at the owner's home while they are
+# away. Copy to catalog/offerings/, then change the per-visit rates, the
+# included pet count, the holiday rate and what access you require.
+kind: product
+name: Pet sitting home visits
+description: >
+  Drop-in visits at your home to feed, walk, play and give medication,
+  30 or 60 minutes each. Two pets included per visit. Insulin and other
+  injections need 60-minute visits.
+category: Pet sitting
+keywords: [pet sitter, drop-in visits, cat sitting, feeding, medication]
+date: required # the first visit
+minNoticeHours: 24
+
+price:
+  amount: 28
+  per: visits
+
+ask:
+  visits:
+    type: integer
+    label: How many visits in total?
+    min: 1
+    max: 60
+    role: quantity
+  pets:
+    type: integer
+    label: How many pets?
+    min: 1
+    max: 10
+  key_access:
+    type: select
+    label: How will we get in?
+    options:
+      - { value: lockbox_or_code, label: Lockbox or door code }
+      - { value: key_handover, label: Hand us a key before the first visit }
+      - { value: none, label: 'Someone lets us in each time, or not sure yet' }
+  medication:
+    type: select
+    label: Do any pets need medication?
+    options:
+      - { value: none, label: No }
+      - { value: oral, label: 'Yes, pills or liquid' }
+      - { value: injection, label: 'Yes, injections (for example insulin)' }
+
+choose:
+  visit_length:
+    label: Visit length
+    mode: single
+    required: true
+    options:
+      thirty_min: { label: 30 minutes }
+      sixty_min: { label: 60 minutes, price: { amount: 18, per: visits } }
+
+rules:
+  - id: needs_key_access
+    when: { key_access: none }
+    block: We need a key, lockbox or door code before the first visit.
+  - id: injections_need_long_visit
+    when: { medication: injection }
+    require: visit_length.sixty_min
+    message: Injections need a 60-minute visit
+
+pricing:
+  - id: extra_pets
+    label: Extra pets
+    kind: addon
+    formula: (pets - 2) * visits * 5
+    when: { pets: { gte: 3 } }
+    reason: Two pets included; $5 per visit for each pet after that
+  # Judged on the first visit's date.
+  - id: holiday_rate
+    label: Holiday rate
+    kind: surcharge
+    amount: 8
+    per: visits
+    when: { isPeak: true }
+    reason: $8 per visit when the booking starts in a holiday window

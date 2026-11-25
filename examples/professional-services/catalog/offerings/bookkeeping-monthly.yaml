@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: bookkeepers and small accounting firms with volume-banded monthly
+# plans. Copy to catalog/offerings/, then change the band edges and fees,
+# the catch-up rate and the software you support.
+kind: product
+name: Monthly Bookkeeping
+description: >
+  Monthly reconciliation, categorization and a close pack (P&L, balance
+  sheet) in QuickBooks Online or Xero. Priced by monthly transaction volume.
+  The quote is the first month plus any one-off catch-up work.
+category: Accounting
+keywords: [bookkeeping, accounting, reconciliation, monthly, catch-up]
+
+# The fee for the first band (up to 100 transactions a month).
+price: 350
+
+ask:
+  monthly_transactions:
+    type: integer
+    label: About how many bank and card transactions do you have a month?
+    min: 0
+    max: 100000
+  accounting_software:
+    type: select
+    label: Which accounting software do you use?
+    options: [quickbooks_online, xero, other]
+  months_behind:
+    type: integer
+    label: How many months behind are your books?
+    description: Enter 0 if your books are reconciled to last month.
+    min: 0
+    max: 120
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      payroll: { label: Payroll for up to 10 employees, price: 120 }
+      sales_tax_filing: { label: Sales tax filing (one state), price: 90 }
+
+rules:
+  - id: supported_software
+    when: { not: { accounting_software: [quickbooks_online, xero] } }
+    block: We work in QuickBooks Online or Xero only.
+  - id: max_volume
+    when: { monthly_transactions: { gt: 600 } }
+    block: >
+      Over 600 transactions a month needs a custom plan. Email
+      hello@books.example with your volumes.
+  - id: max_catch_up
+    when: { months_behind: { gt: 12 } }
+    block: >
+      More than 12 months behind is a clean-up project we scope first.
+      Email hello@books.example.
+
+pricing:
+  # Bands are flat steps on top of the base, chosen by the answer. Not
+  # `tiers`: tiers multiply a per-unit rate by the whole quantity.
+  - id: band_101_300
+    label: Volume band 101–300 transactions
+    kind: addon
+    amount: 200
+    when: { monthly_transactions: { gte: 101, lte: 300 } }
+  - id: band_301_600
+    label: Volume band 301–600 transactions
+    kind: addon
+    amount: 450
+    when: { monthly_transactions: { gte: 301, lte: 600 } }
+  - id: catch_up
+    label: Catch-up months (one-off)
+    kind: addon
+    amount: 175
+    per: months_behind
+    when: { months_behind: { gte: 1 } }
+    reason: Reconciling past months before the monthly service starts

@@ -1,0 +1,77 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $90 base + $20 per bedroom + $25 per bathroom; deep +50% / move-out +75%
+# of that (not of add-ons); $15 pet hair surcharge. No sales tax.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: no date yet - the date is asked first
+    offering: house-cleaning
+    expect:
+      status: needs_input
+      asks: date
+
+  - name: standard clean, 3 bed 2 bath, no pets
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 1800, bedrooms: 3, bathrooms: 2, pets_in_home: false }
+    selections: { clean_type: standard }
+    expect:
+      status: qualified
+      total: 200 # 90 + 3 x 20 + 2 x 25
+
+  - name: the pets question is asked only once pricing needs it
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 1800, bedrooms: 3, bathrooms: 2 }
+    selections: { clean_type: standard }
+    expect:
+      status: needs_input
+      asks: pets_in_home
+
+  - name: deep clean with the oven add-on and pets
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 1800, bedrooms: 3, bathrooms: 2, pets_in_home: true }
+    selections: { clean_type: deep_clean, extras: [inside_oven] }
+    expect:
+      status: qualified
+      total: 350 # 200 + 50% of 200 + 35 oven + 15 pets
+      lines:
+        - { label: Deep clean, amount: 100 }
+        - { label: Inside the oven, amount: 35 }
+        - { label: Pet hair surcharge, amount: 15 }
+
+  - name: move-out clean, 2 bed 1 bath
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 1000, bedrooms: 2, bathrooms: 1, pets_in_home: false }
+    selections: { clean_type: move_out }
+    expect:
+      status: qualified
+      total: 271.25 # (90 + 40 + 25) x 1.75
+
+  - name: move-out already includes the oven
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 1000, bedrooms: 2, bathrooms: 1, pets_in_home: false }
+    selections: { clean_type: move_out, extras: [inside_oven] }
+    expect:
+      status: blocked
+      rule: move_out_includes_oven
+
+  - name: homes over 3,500 sq ft are refused (walkthrough first)
+    offering: house-cleaning
+    date: '2026-03-05'
+    answers: { square_feet: 4200 }
+    expect:
+      status: blocked
+      rule: max_home_size
+
+  - name: same-day booking is too soon (24h notice)
+    offering: house-cleaning
+    date: '2026-03-02T22:00:00Z'
+    answers: { square_feet: 1800, bedrooms: 3, bathrooms: 2, pets_in_home: false }
+    selections: { clean_type: standard }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

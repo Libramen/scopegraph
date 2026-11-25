@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Private guided tour: $290 per group (up to 6), +$160 second guide for 7-12,
+# refused over 12. Sales tax 7%; museum tickets are pass-through (untaxed).
+# 2026-04-14 is a Tuesday, off-peak.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: four guests, highlights tour in English
+    offering: private-guided-tour
+    date: '2026-04-14'
+    answers: { party_size: 4 }
+    selections: { tour_length: highlights_3h, language: english }
+    expect:
+      status: qualified
+      total: 310.3 # 290; tax 20.30
+
+  - name: eight guests add a second guide, Japanese guide and museum tickets
+    offering: private-guided-tour
+    date: '2026-04-14'
+    answers: { party_size: 8 }
+    selections:
+      tour_length: half_day_5h
+      language: japanese
+      entry_tickets: museum_tickets
+    expect:
+      status: qualified
+      subtotal: 841 # 290 + 140 + 75 + 160 guide + 176 tickets
+      tax: 46.55 # 7% of 665; tickets are untaxed
+      total: 887.55
+      lines:
+        - { label: Second guide (7-12 guests), amount: 160 }
+        - { label: Museum entry for the whole group, amount: 176 }
+
+  - name: fourteen guests are refused (one guide team takes 12)
+    offering: private-guided-tour
+    date: '2026-04-14'
+    answers: { party_size: 14 }
+    expect:
+      status: blocked
+      rule: max_party_size
+
+  - name: the full day asks for the private vehicle it requires
+    offering: private-guided-tour
+    date: '2026-04-14'
+    answers: { party_size: 2 }
+    selections: { tour_length: full_day_8h, language: spanish }
+    expect:
+      status: needs_input
+      asks: transport
+
+  - name: full day with the vehicle qualifies
+    offering: private-guided-tour
+    date: '2026-04-14'
+    answers: { party_size: 2 }
+    selections: { tour_length: full_day_8h, language: spanish, transport: private_vehicle }
+    expect:
+      status: qualified
+      total: 898.8 # 290 + 330 + 220; tax 58.80
+
+  - name: tomorrow is inside the 48-hour notice window
+    offering: private-guided-tour
+    date: '2026-01-02'
+    answers: { party_size: 4 }
+    selections: { tour_length: highlights_3h, language: english }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

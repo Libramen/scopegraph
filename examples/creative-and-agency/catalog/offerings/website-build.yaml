@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: web studios and freelance developers quoting marketing sites.
+# Copy to catalog/offerings/, then change the per-page rate, the CMS
+# options, the integrations, the page limit and the rush window.
+kind: product
+name: Website Build
+description: >
+  Design and build of a marketing website: a home page and design system,
+  inner pages priced per page, your choice of CMS and integrations. The date
+  is the launch date.
+category: Web
+keywords: [website, web design, development, cms, webflow, wordpress]
+date: required # launch date
+minNoticeHours: 504 # 3 weeks
+
+# Home page, design system and launch.
+price: 3000
+
+ask:
+  inner_pages:
+    type: integer
+    label: How many pages besides the home page?
+    min: 0
+    max: 500
+    role: quantity
+
+choose:
+  cms:
+    label: Content management system
+    required: true
+    options:
+      webflow: { label: Webflow }
+      wordpress: { label: WordPress (custom theme), price: 1200 }
+      headless: { label: Headless CMS with a custom front end, price: 4000 }
+  integrations:
+    label: Integrations
+    mode: multi
+    options:
+      crm_forms: { label: Forms into your CRM, price: 600 }
+      newsletter: { label: Newsletter sign-up, price: 400 }
+      booking: { label: Booking or scheduling, price: 900 }
+      online_store: { label: 'Online store, up to 25 products', price: 2500 }
+
+rules:
+  - id: max_pages
+    when: { inner_pages: { gt: 40 } }
+    block: >
+      Sites over 40 pages need content strategy and a custom proposal.
+      Email hello@studio.example with your sitemap.
+
+pricing:
+  - id: inner_pages
+    label: Inner pages
+    kind: addon
+    amount: 450
+    per: inner_pages
+    when: { inner_pages: { gte: 1 } }
+  - id: rush
+    label: Rush launch
+    kind: surcharge
+    percent: 30 # of the whole build so far (running subtotal)
+    when: { leadTimeDays: { lt: 42 } }
+    reason: Launch within 6 weeks

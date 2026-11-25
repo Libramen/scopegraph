@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $25 per 30-minute walk (+$15 for 60 minutes); $3 off every walk on 5-9
+# walk bookings, $5 off on 10+; $10 per walk per extra dog; max 3 dogs.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: a weekday pack of five 30-minute walks
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 5, dogs: 1, new_client: false }
+    selections: { walk_length: thirty_min }
+    expect:
+      status: qualified
+      total: 110 # 5 x 25 - 5 x 3
+      lines:
+        - { label: Pack discount, amount: -15 }
+
+  - name: ten 60-minute walks for two dogs
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 10, dogs: 2, new_client: false }
+    selections: { walk_length: sixty_min }
+    expect:
+      status: qualified
+      total: 450 # 250 + 150 longer walks + 100 second dog - 50 pack
+      lines:
+        - { label: Additional dogs, amount: 100 }
+        - { label: Pack discount, amount: -50 }
+
+  - name: a new client is offered the meet-and-greet
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 1, dogs: 1, new_client: true }
+    selections: { walk_length: thirty_min }
+    expect:
+      status: needs_input
+      asks: intro
+
+  - name: a new client with the meet-and-greet books a single walk
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 1, dogs: 1, new_client: true }
+    selections: { walk_length: thirty_min, intro: [meet_and_greet] }
+    expect:
+      status: qualified
+      total: 25
+
+  - name: a new client who declines the meet-and-greet is refused
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 1, dogs: 1, new_client: true }
+    selections: { walk_length: thirty_min, intro: [] }
+    expect:
+      status: blocked
+      rule: new_clients_meet_first
+
+  - name: four dogs is more than one walker takes
+    offering: dog-walking
+    date: '2026-03-09'
+    answers: { walks: 5, dogs: 4 }
+    expect:
+      status: blocked
+      rule: max_dogs

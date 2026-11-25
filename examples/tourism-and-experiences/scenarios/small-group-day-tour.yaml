@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Small-group day tour: $139 per adult, $89 per child, park entry $25 per
+# adult passed through untaxed. Sales tax 7%. 2026-04-14 is a Tuesday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: two adults and an 8-year-old
+    offering: small-group-day-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 1, youngest_child_age: 8 }
+    expect:
+      status: qualified
+      subtotal: 417 # 278 + 89 child seat + 50 park entry
+      tax: 25.69 # 7% of 367; park entry is untaxed
+      total: 442.69
+      lines:
+        - { label: Child seats (under 12), amount: 89 }
+        - { label: National park entry (adults), amount: 50 }
+
+  - name: adults only - the child age is never asked
+    offering: small-group-day-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 0 }
+    expect:
+      status: qualified
+      total: 347.46 # 278 + 19.46 tax + 50 park entry
+
+  - name: children booked - the youngest age is asked
+    offering: small-group-day-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 2 }
+    expect:
+      status: needs_input
+      asks: youngest_child_age
+
+  - name: a 4-year-old is refused (min age 6)
+    offering: small-group-day-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 1, youngest_child_age: 4 }
+    expect:
+      status: blocked
+      rule: min_child_age
+
+  - name: sixteen adults exceed the 14-seat van
+    offering: small-group-day-tour
+    date: '2026-04-14'
+    answers: { adults: 16, children: 0 }
+    expect:
+      status: blocked
+      rule: max_seats

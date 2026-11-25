@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: tasting rooms, breweries, distilleries and food tastings sold
+# per guest. Copy to catalog/offerings/, then change the per-guest price,
+# the flights, the table-size savings and the largest group you seat.
+kind: product
+name: Seated Wine Tasting
+description: >
+  A hosted, seated tasting of five wines for groups of 1 to 24 guests, all
+  21 or over. Reserve flight and food pairing available; groups of 6 or more
+  save per guest.
+category: Tastings
+keywords: [wine tasting, winery, tasting room, flight, food pairing]
+date: required
+minNoticeHours: 24
+
+price:
+  amount: 45
+  per: guests
+
+ask:
+  guests:
+    type: integer
+    label: How many guests?
+    min: 1
+    max: 100
+    role: quantity
+  all_guests_21_plus:
+    type: boolean
+    label: Is every guest 21 or over? (We check ID at the door.)
+
+choose:
+  flight:
+    label: Flight
+    required: true
+    options:
+      estate: { label: Estate flight }
+      reserve: { label: Reserve flight, price: { amount: 20, per: guests } }
+  pairing:
+    label: Food
+    options:
+      cheese_and_charcuterie: { label: Cheese and charcuterie pairing, price: { amount: 18, per: guests } }
+
+rules:
+  - id: legal_age
+    when: { not: { all_guests_21_plus: true } }
+    block: Every guest must be 21 or over, including non-drinkers
+  - id: max_group
+    when: { not: { guests: { lte: 24 } } }
+    block: Groups over 24 are private events; contact us for a buyout quote
+
+pricing:
+  # The table's size picks one per-guest saving, and every guest at the
+  # table gets it. The 0 tier keeps small tables valid (a quantity outside
+  # every tier fails closed).
+  - id: table_saving
+    label: Larger-table saving
+    kind: discount
+    per: guests
+    tiers:
+      - { from: 0, to: 5, amount: 0 }
+      - { from: 6, to: 11, amount: 5 }
+      - { from: 12, amount: 8 }

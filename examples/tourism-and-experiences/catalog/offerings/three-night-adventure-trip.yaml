@@ -1,0 +1,53 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: multi-day trips that bundle tours and activities you also sell
+# alone. Copy this file AND the two products it contains
+# (small-group-day-tour, zipline-canopy-tour) to catalog/offerings/, then
+# change the room prices, the bundle discount and the peak percentage.
+kind: package
+name: Three-Night Adventure Trip
+description: >
+  Three nights' lodging with the small-group park day tour and the zipline
+  canopy tour. Priced as the adult tour and zipline seats less 10%, plus
+  child seats, your room and park entry. Children under 12 share their
+  parents' room free.
+category: Trips
+keywords: [multi-day trip, vacation package, adventure, lodging, tour]
+date: required # the arrival date
+minNoticeHours: 336 # 14 days
+
+# No `price:`: the package charges the SUM of what it contains (the tour and
+# zipline seat prices), less this bundle discount. The products' questions,
+# safety rules, child lines and park fee all flow in.
+contains:
+  - small-group-day-tour
+  - zipline-canopy-tour
+
+discount:
+  percent: 10
+
+# Option groups do not flow in from the products; the package owns its own.
+choose:
+  room_type:
+    label: Room (3 nights)
+    required: true
+    options:
+      twin_share: { label: Shared twin or double, price: { amount: 390, per: adults } }
+      single_room: { label: Single room, price: { amount: 690, per: adults } }
+  trip_extras:
+    label: Extras
+    mode: multi
+    options:
+      airport_pickup: { label: Airport pickup and drop-off for the group, price: 120 }
+      ride_photos: { label: Zipline ride photos, price: 49 }
+
+pricing:
+  # basis: running at the surcharge default (order 300) means 12% of
+  # everything before it: the activities, the bundle discount, child seats
+  # and rooms. The park-entry fee runs later (order 400) and is not marked up.
+  - id: peak_season
+    label: Peak season
+    kind: surcharge
+    percent: 12
+    basis: running
+    when: { isPeak: true }
+    reason: Summer and holiday peak dates

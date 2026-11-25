@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Tutoring: $60/hour + level and test-prep premiums per hour, $5/hour off
+# for 10+ hours and $10/hour off for 20+. No tax.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: subject is asked first
+    offering: private-tutoring
+    expect:
+      status: needs_input
+      asks: subject
+
+  - name: five hours of middle-school math
+    offering: private-tutoring
+    answers: { subject: math, level: middle_school, hours: 5 }
+    expect:
+      status: qualified
+      total: 300
+
+  - name: a 10-hour high-school pack gets $5 an hour off
+    offering: private-tutoring
+    answers: { subject: math, level: high_school, hours: 10 }
+    expect:
+      status: qualified
+      total: 700 # 10 x (60 + 15) - 10 x 5
+      lines:
+        - { label: Pack discount, amount: -50 }
+
+  - name: a 20-hour test-prep pack
+    offering: private-tutoring
+    answers: { subject: test_prep, level: high_school, hours: 20 }
+    expect:
+      status: qualified
+      total: 1700 # 20 x (60 + 15 + 20) - 20 x 10
+
+  - name: college English is refused
+    offering: private-tutoring
+    answers: { subject: english, level: college }
+    expect:
+      status: blocked
+      rule: college_subjects

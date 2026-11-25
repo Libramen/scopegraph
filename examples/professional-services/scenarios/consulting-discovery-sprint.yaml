@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Discovery sprint: fixed $6,500 fee, scope questions that refuse the wrong
+# client, and an interview allowance enforced by `require`. No tax.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: company size is asked first
+    offering: consulting-discovery-sprint
+    expect:
+      status: needs_input
+      asks: company_size
+
+  - name: a 40-person company with 6 interviews pays the fixed fee
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_50, focus_area: operations, decision_maker: true, stakeholder_interviews: 6 }
+    expect:
+      status: qualified
+      total: 6500
+
+  - name: on-site workshop adds the day and untaxed travel
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_250, focus_area: strategy, decision_maker: true, stakeholder_interviews: 8 }
+    selections: { extras: [onsite_workshop] }
+    expect:
+      status: qualified
+      total: 9550 # 6500 + 2400 + 650 travel
+      lines:
+        - { label: Workshop travel, amount: 650 }
+
+  - name: no decision-maker in the room is refused
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_250, focus_area: technology, decision_maker: false, stakeholder_interviews: 5 }
+    expect:
+      status: blocked
+      rule: decision_maker_required
+
+  - name: a company of over 1,000 people goes to a proposal
+    offering: consulting-discovery-sprint
+    answers: { company_size: over_1000 }
+    expect:
+      status: blocked
+      rule: no_large_org
+
+  - name: 12 interviews surface the interview pack
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_1000, focus_area: go_to_market, decision_maker: true, stakeholder_interviews: 12 }
+    expect:
+      status: needs_input
+      asks: extras
+
+  - name: 12 interviews without the pack are refused
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_1000, focus_area: go_to_market, decision_maker: true, stakeholder_interviews: 12 }
+    selections: { extras: [onsite_workshop] }
+    expect:
+      status: blocked
+      rule: interviews_over_allowance
+
+  - name: 12 interviews with the pack qualify
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_1000, focus_area: go_to_market, decision_maker: true, stakeholder_interviews: 12 }
+    selections: { extras: [interview_pack] }
+    expect:
+      status: qualified
+      total: 8500 # 6500 + 2000
+
+  - name: 20 interviews are a bigger engagement
+    offering: consulting-discovery-sprint
+    answers: { company_size: up_to_1000, focus_area: go_to_market, decision_maker: true, stakeholder_interviews: 20 }
+    selections: { extras: [interview_pack] }
+    expect:
+      status: blocked
+      rule: max_interviews

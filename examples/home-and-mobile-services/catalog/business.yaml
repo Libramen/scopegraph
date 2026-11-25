@@ -1,0 +1,20 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the home & mobile services examples. Copy the parts
+# you need into your own catalog/business.yaml: set your name, timezone and
+# booking URL. No taxRate: whether labour is taxed depends on your state, so
+# add one only if your services are taxable (travel lines are already
+# marked taxable: false).
+name: Example — Home & mobile services
+description: >
+  Illustrative catalog of home and mobile service jobs: house cleaning,
+  window cleaning, moving help, mobile car detailing, lawn care and
+  handyman work. Prices are examples, not market rates.
+currency: USD
+timezone: America/Chicago
+
+# A qualified quote hands the buyer to your booking page with the answers
+# attached. Blocked and needs_input results carry no link: refusals that
+# should route somewhere say where in their own message.
+handoff:
+  url: https://book.homeservices.example/request?offering={offering}&currency={currency}&{params}
+  message: Pick an arrival window on our booking page to confirm this job.

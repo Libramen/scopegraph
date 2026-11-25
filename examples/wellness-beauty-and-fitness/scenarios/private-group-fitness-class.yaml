@@ -1,0 +1,61 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Private group class: $30 per person, $300 minimum (topped up), 20% weekend
+# premium on the class price, aerial yoga capped at 10 and studio-only.
+# No sales tax. 2026-03-10 is a Tuesday; 2026-03-14 is a Saturday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: six people pay the $300 minimum
+    offering: private-group-fitness-class
+    date: '2026-03-10'
+    answers: { participants: 6 }
+    selections: { class_type: yoga, location: our_studio }
+    expect:
+      status: qualified
+      total: 300 # 180 + 120 top-up
+
+  - name: twenty people, HIIT at their office on a Saturday
+    offering: private-group-fitness-class
+    date: '2026-03-14'
+    answers: { participants: 20 }
+    selections: { class_type: hiit, location: your_venue }
+    expect:
+      status: qualified
+      total: 840 # 600 + 120 off-site + 120 weekend
+      lines:
+        - { label: Weekend premium, amount: 120 }
+
+  - name: eight people, aerial yoga at the studio
+    offering: private-group-fitness-class
+    date: '2026-03-10'
+    answers: { participants: 8 }
+    selections: { class_type: aerial_yoga, location: our_studio }
+    expect:
+      status: qualified
+      total: 360 # 240 + 120 aerial
+
+  - name: twelve people is too many for aerial yoga
+    offering: private-group-fitness-class
+    date: '2026-03-10'
+    answers: { participants: 12 }
+    selections: { class_type: aerial_yoga, location: our_studio }
+    expect:
+      status: blocked
+      rule: aerial_rigs
+
+  - name: aerial yoga cannot go off-site
+    offering: private-group-fitness-class
+    date: '2026-03-10'
+    answers: { participants: 8 }
+    selections: { class_type: aerial_yoga, location: your_venue }
+    expect:
+      status: blocked
+      rule: aerial_in_studio
+
+  - name: forty people exceed the class size
+    offering: private-group-fitness-class
+    date: '2026-03-10'
+    answers: { participants: 40 }
+    expect:
+      status: blocked
+      rule: max_participants

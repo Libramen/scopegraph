@@ -1,0 +1,70 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: tax preparers and accountants pricing individual returns as a
+# base plus schedules. Copy to catalog/offerings/, then change the base fee,
+# the schedule prices, the rush window and what you won't prepare.
+kind: product
+name: Individual Tax Return
+description: >
+  Preparation and e-filing of a federal individual return and one state
+  return. Schedules, rental properties and extra states are priced on top.
+category: Tax
+keywords: [tax, tax return, '1040', accountant, preparer, filing]
+date: required # the date the return must be filed by
+minNoticeHours: 72
+
+# Federal return with the standard deduction plus one state.
+price: 325
+
+ask:
+  foreign_income:
+    type: boolean
+    label: Do you have foreign income or foreign bank accounts?
+  states_filed:
+    type: integer
+    label: How many state returns do you need?
+    min: 1
+    max: 10
+  rental_properties:
+    # Required, but gated: only asked while Schedule E is selected.
+    type: integer
+    label: How many rental properties?
+    min: 1
+    max: 50
+
+choose:
+  schedules:
+    label: What else is on your return?
+    mode: multi
+    options:
+      schedule_a: { label: Itemized deductions (Schedule A), price: 125 }
+      schedule_c: { label: Self-employment income (Schedule C), price: 250 }
+      schedule_d: { label: Investment sales (Schedule D), price: 150 }
+      schedule_e:
+        label: Rental income (Schedule E)
+        price: { amount: 200, per: rental_properties }
+
+rules:
+  - id: no_foreign_returns
+    when: { foreign_income: true }
+    block: >
+      Returns with foreign income or accounts are outside our fixed-fee
+      service. Email hello@tax.example and we'll quote it separately.
+  - id: ask_rental_properties
+    when: { selected: schedules.schedule_e }
+    ask: rental_properties
+  - id: max_rentals
+    when: { all: [ { selected: schedules.schedule_e }, { rental_properties: { gt: 4 } } ] }
+    block: More than 4 rental properties needs a real-estate review; email hello@tax.example.
+
+pricing:
+  - id: extra_states
+    label: Additional state returns
+    kind: addon
+    formula: (states_filed - 1) * 95
+    when: { states_filed: { gte: 2 } } # keeps the formula from running at 1
+  - id: deadline_rush
+    label: Deadline rush
+    kind: surcharge
+    percent: 30 # of the return and its schedules (running subtotal)
+    when: { leadTimeDays: { lt: 10 } }
+    reason: Filing needed within 10 days

@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $55 per night for the first dog, $40 per night per extra dog sharing the
+# suite; +$15 per dog per night when check-in falls in a holiday window.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: one dog, three nights in March
+    offering: dog-boarding
+    date: '2026-03-05'
+    answers: { nights: 3, dogs: 1, vaccinations_current: true }
+    expect:
+      status: qualified
+      total: 165 # 3 x 55
+
+  - name: two dogs, four nights, bath and play group
+    offering: dog-boarding
+    date: '2026-03-05'
+    answers: { nights: 4, dogs: 2, vaccinations_current: true }
+    selections: { extras: [bath_at_checkout, daily_play_group] }
+    expect:
+      status: qualified
+      total: 526 # 220 + 160 second dog + 2 x 25 baths + 2 x 4 x 12 play
+      lines:
+        - { label: Additional dogs (shared suite), amount: 160 }
+        - { label: Daily play group, amount: 96 }
+
+  - name: Christmas check-in pays the holiday rate
+    offering: dog-boarding
+    date: '2026-12-22'
+    answers: { nights: 5, dogs: 2, vaccinations_current: true }
+    expect:
+      status: qualified
+      total: 625 # 275 + 200 second dog + 2 x 5 x 15 holiday
+      lines:
+        - { label: Holiday rate, amount: 150 }
+
+  - name: Thanksgiving check-in pays the holiday rate
+    offering: dog-boarding
+    date: '2026-11-26'
+    answers: { nights: 2, dogs: 1, vaccinations_current: true }
+    expect:
+      status: qualified
+      total: 140 # 110 + 2 x 15
+
+  - name: missing vaccinations are refused
+    offering: dog-boarding
+    date: '2026-03-05'
+    answers: { nights: 3, dogs: 1, vaccinations_current: false }
+    expect:
+      status: blocked
+      rule: vaccinations_required
+
+  - name: four dogs do not fit one suite
+    offering: dog-boarding
+    date: '2026-03-05'
+    answers: { nights: 3, dogs: 4 }
+    expect:
+      status: blocked
+      rule: max_dogs

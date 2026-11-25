@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Spa day: $260 per person (fixed package price), upgrades per person,
+# 10% weekend premium on the day price, the massage's couples suite fee and
+# trimester rule flow in. No sales tax.
+# 2026-03-10 is a Tuesday; 2026-03-14 is a Saturday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: one guest on a weekday
+    offering: spa-day-package
+    date: '2026-03-10'
+    answers: { youngest_guest_age: 30, people: 1, pregnant: false }
+    selections: { massage_length: sixty_minutes }
+    expect:
+      status: qualified
+      total: 260
+
+  - name: two guests on a Saturday with the 90-minute upgrade and champagne
+    offering: spa-day-package
+    date: '2026-03-14'
+    answers: { youngest_guest_age: 30, people: 2, pregnant: false }
+    selections: { massage_length: ninety_minutes, extras: [champagne] }
+    expect:
+      status: qualified
+      total: 724 # 520 + 90 + 32 + 30 couples suite + 52 weekend
+      lines:
+        - { label: Weekend premium, amount: 52 }
+
+  - name: a 14-year-old cannot use the thermal suite
+    offering: spa-day-package
+    date: '2026-03-10'
+    answers: { youngest_guest_age: 14 }
+    expect:
+      status: blocked
+      rule: thermal_suite_age
+
+  - name: the massage's trimester rule applies inside the spa day
+    offering: spa-day-package
+    date: '2026-03-10'
+    answers: { youngest_guest_age: 30, people: 1, pregnant: true, weeks_pregnant: 8 }
+    expect:
+      status: blocked
+      rule: first_trimester
+
+  - name: the facial is only sold inside the spa day
+    offering: spa-express-facial
+    expect:
+      status: unavailable

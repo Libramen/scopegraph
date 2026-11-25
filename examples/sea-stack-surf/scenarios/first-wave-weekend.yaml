@@ -1,0 +1,138 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# The package adds up its products ($95 per surfer + $160), takes on their
+# questions, rules and date surcharges, and adds its own hire group, weekend
+# rule and $350 minimum spend. Tax is 9%.
+# `now` is Monday 2026-02-02; 2026-02-05 is a Thursday, 2026-02-07 a Saturday,
+# 2026-02-08 a Sunday and 2026-07-11 a Saturday in summer_break.
+defaults:
+  now: '2026-02-02T17:00:00Z'
+  facts: { tide_ft: 3 }
+scenarios:
+  - name: after the date, the package asks for the head count
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    expect:
+      status: needs_input
+      asks: surfers
+
+  # ── refusals ────────────────────────────────────────────────────────────
+  - name: a Thursday is turned away (weekends_only)
+    offering: first-wave-weekend
+    date: '2026-02-05'
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: blocked
+      rule: weekends_only
+
+  - name: three surfers hit the private session's cap of two
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 3, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: blocked
+      rule: private-lesson.up_to_two
+
+  - name: the shared cold-water rule is reported once, under the group lesson
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 2, cold_water_ok: false }
+    expect:
+      status: blocked
+      rule: surf-lesson.cold_water
+
+  # ── hire rules (the package's own) ──────────────────────────────────────
+  - name: a first-timer who picked no hire is asked about hire (require)
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true, surf_history: first_time }
+    expect:
+      status: needs_input
+      asks: hire
+
+  - name: a first-timer hiring only a suit is refused (first_timers_need_foam_boards)
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true, surf_history: first_time, suit_size: s }
+    selections: { hire: [hooded_suit] }
+    expect:
+      status: blocked
+      rule: first_timers_need_foam_boards
+
+  - name: hiring a suit brings up the suit-size question
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true, surf_history: whitewater }
+    selections: { hire: [hooded_suit] }
+    expect:
+      status: needs_input
+      asks: suit_size
+
+  - name: hire the package doesn't offer is invalid
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true, surf_history: whitewater }
+    selections: { hire: [bodyboard] }
+    expect:
+      status: invalid
+      error: selections.hire
+
+  # ── prices ──────────────────────────────────────────────────────────────
+  - name: one surfer comes in under $350 and is topped up
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true, surf_history: first_time }
+    selections: { hire: [foam_board] }
+    expect:
+      status: qualified
+      total: 381.5 # 95 + 160 + 20 board + 10 weekend = 285, topped up by 65 to 350; tax 31.50
+      subtotal: 350
+      lines:
+        - { label: Foam board, amount: 20 }
+        - { label: Weekend surcharge, amount: 10 }
+        - { label: Minimum spend, amount: 65 }
+
+  - name: two surfers with boards on a Saturday
+    offering: first-wave-weekend
+    date: '2026-02-07'
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    selections: { hire: [foam_board] }
+    expect:
+      status: qualified
+      total: 446.9 # 190 + 160 + 40 boards + 20 weekend = 410; tax 36.90
+      lines:
+        - { label: Foam board, amount: 40 }
+        - { label: Weekend surcharge, amount: 20 }
+
+  - name: hire is charged for each surfer
+    offering: first-wave-weekend
+    date: '2026-02-08'
+    answers: { surfers: 2, cold_water_ok: true, surf_history: first_time, suit_size: l }
+    selections: { hire: [foam_board, hooded_suit] }
+    expect:
+      status: qualified
+      total: 512.3 # 190 + 160 + 40 boards + 60 suits + 20 weekend = 470; tax 42.30
+      lines:
+        - { label: Foam board, amount: 40 }
+        - { label: 5/4 hooded suit, amount: 60 }
+
+  - name: in the summer holidays, 20% is added to the group lesson only
+    offering: first-wave-weekend
+    date: '2026-07-11'
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    selections: { hire: [] }
+    expect:
+      status: qualified
+      total: 444.72 # 190 + 160 + 20 weekend + 38 summer (20% of 190, not of 350) = 408; tax 36.72
+      lines:
+        - { label: Weekend surcharge, amount: 20 }
+        - { label: Summer holiday surcharge, amount: 38 }
+
+  - name: two surfers without hire are already over the minimum
+    offering: first-wave-weekend
+    date: '2026-02-08'
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    selections: { hire: [] }
+    expect:
+      status: qualified
+      total: 403.3 # 190 + 160 + 20 weekend = 370, no top-up; tax 33.30
+      subtotal: 370

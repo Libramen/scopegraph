@@ -1,0 +1,60 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: a handyman booked by the hour for small jobs, with a 2-hour
+# minimum charge. Copy to catalog/offerings/, then change the hourly rate,
+# the minimum, the rush window and the job types you refuse. Pair it with
+# handyman-site-survey.yaml for jobs too big to price by the hour.
+kind: product
+name: Handyman (hourly)
+description: >
+  A handyman for small jobs (mounting, assembly, minor repairs, fixture
+  swaps, drywall patches) booked by the hour, 2-hour minimum charge.
+  Materials are bought on the day and billed at cost.
+category: Repairs
+keywords: [handyman, repairs, mounting, assembly, odd jobs]
+date: required
+minNoticeHours: 24
+
+price:
+  amount: 85
+  per: hours
+
+ask:
+  job_types:
+    type: multiselect
+    label: What needs doing?
+    options:
+      - { value: mounting, label: 'Mounting (TV, shelves, mirrors, curtain rods)' }
+      - { value: assembly, label: Furniture assembly }
+      - { value: minor_repair, label: 'Minor repairs (doors, hinges, caulking)' }
+      - { value: fixture_swap, label: 'Swap an existing light fixture, faucet or fan' }
+      - { value: drywall_patch, label: Drywall patching }
+      - { value: new_wiring_or_plumbing, label: 'New wiring, circuits or plumbing lines' }
+      - { value: larger_project, label: 'A larger project (remodel, deck, flooring, more than a day)' }
+  hours:
+    type: integer
+    label: How many hours do you want to book?
+    min: 1
+    max: 8
+    role: quantity
+
+rules:
+  - id: not_handyman_work
+    when: { job_types: { contains: new_wiring_or_plumbing } }
+    block: New wiring, circuits or plumbing lines are outside our handyman service; book an electrician or plumber.
+  - id: needs_site_survey
+    when: { job_types: { contains: larger_project } }
+    block: >
+      Projects bigger than a day of small jobs are quoted after a site
+      survey. Book the handyman-site-survey visit instead.
+
+pricing:
+  - id: rush
+    label: Rush booking
+    kind: surcharge
+    amount: 40
+    when: { leadTimeHours: { lt: 72 } }
+    reason: Booked less than 3 days ahead
+
+minimumSpend:
+  amount: 170 # two hours
+  mode: top_up

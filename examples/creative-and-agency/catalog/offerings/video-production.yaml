@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: video production companies quoting brand films, explainers and
+# event videos. Copy to catalog/offerings/, then change the crew day rates,
+# the edit day rate and the minimums.
+kind: product
+name: Video Production
+description: >
+  Pre-production, filming and editing of a brand or explainer video. Crew
+  size sets the shoot-day rate; editing is priced per edit day.
+category: Video
+keywords: [video, production, film, shoot, edit, crew]
+
+# Pre-production: script, shot list, call sheet.
+price: 1200
+
+ask:
+  shoot_days:
+    type: integer
+    label: How many shoot days?
+    min: 1
+    max: 30
+    role: quantity
+  edit_days:
+    type: integer
+    label: How many edit days?
+    description: Roughly one edit day per finished minute for a brand film.
+    min: 1
+    max: 30
+    role: quantity
+
+choose:
+  crew:
+    label: Crew size
+    required: true
+    options:
+      solo:
+        label: Solo shooter
+        price: { amount: 1800, per: shoot_days }
+      small_crew:
+        label: Small crew (director, camera, sound)
+        price: { amount: 3600, per: shoot_days }
+      full_crew:
+        label: Full crew (5+, lighting and grip)
+        price: { amount: 6500, per: shoot_days }
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      drone: { label: Drone footage, price: 850 }
+      color_grade: { label: Cinema color grade, price: 1100 }
+
+rules:
+  - id: drone_needs_crew
+    when: { selected: crew.solo }
+    exclude: extras.drone
+    message: Drone work needs a second operator, so it comes with a small or full crew.
+  - id: full_crew_minimum
+    when: { all: [ { selected: crew.full_crew }, { shoot_days: { lt: 2 } } ] }
+    block: Full-crew shoots are booked for 2 days or more.
+
+pricing:
+  - id: edit
+    label: Editing
+    kind: addon
+    amount: 950
+    per: edit_days

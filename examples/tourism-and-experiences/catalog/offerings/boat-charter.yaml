@@ -1,0 +1,78 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: skippered boat or yacht charters by the hour. Copy to
+# catalog/offerings/, then change the hourly rate, the minimum hours, the
+# passenger limit, the fuel and peak percentages, and the extras.
+# Peak dates come from `seasons` in business.yaml.
+kind: product
+name: Private Boat Charter
+description: >
+  Charter a 40 ft motor boat by the hour for up to 12 passengers. A captain
+  is included; minimum 3 hours. A deckhand is required for 9 or more
+  passengers.
+category: Charters
+keywords: [boat charter, yacht, private boat, captain, cruise]
+date: required
+minNoticeHours: 48
+
+# Hourly rate, captain included.
+price:
+  amount: 225
+  per: hours
+
+ask:
+  hours:
+    type: integer
+    label: How many hours?
+    min: 1
+    max: 12
+    role: quantity
+  passengers:
+    type: integer
+    label: How many passengers (not counting crew)?
+    min: 1
+    max: 100
+    role: quantity
+
+choose:
+  crew:
+    label: Extra crew
+    options:
+      deckhand: { label: Deckhand, price: { amount: 45, per: hours } }
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      water_toys: { label: Paddleboards and snorkel gear, price: 95 }
+      catered_platters: { label: Catered platters, price: { amount: 22, per: passengers } }
+
+rules:
+  - id: min_hours
+    when: { not: { hours: { gte: 3 } } }
+    block: Charters are a minimum of 3 hours
+  - id: max_hours
+    when: { not: { hours: { lte: 8 } } }
+    block: Charters run up to 8 hours; overnight and multi-day trips are arranged by hand
+  - id: passenger_limit
+    when: { not: { passengers: { lte: 12 } } }
+    block: The boat takes up to 12 passengers
+  - id: deckhand_for_large_groups
+    when: { passengers: { gte: 9 } }
+    require: crew.deckhand
+    message: Groups of 9 or more need a deckhand on board
+
+pricing:
+  # Both percentages read the HIRE line only (basis: base), so they add up
+  # instead of compounding, and neither touches the extras or the crew.
+  - id: fuel_surcharge
+    label: Fuel surcharge
+    kind: surcharge
+    percent: 10
+    basis: base
+    reason: Fuel surcharge on the hire
+  - id: peak_season
+    label: Peak season
+    kind: surcharge
+    percent: 20
+    basis: base
+    when: { isPeak: true }
+    reason: Summer and holiday peak dates

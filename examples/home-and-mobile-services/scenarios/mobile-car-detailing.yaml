@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $60 express wash on a car; size and package options add to it; $50 heavily
+# soiled and $20 self-contained (no tap or power) surcharges.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: full detail on an SUV with pet hair removal
+    offering: mobile-car-detailing
+    date: '2026-03-05'
+    answers: { condition: normal, water_and_power: true }
+    selections: { vehicle_size: suv_or_truck, package: full_detail, addons: [pet_hair_removal] }
+    expect:
+      status: qualified
+      total: 275 # 60 + 25 SUV + 150 full detail + 40 pet hair
+
+  - name: the water and power question is asked when pricing needs it
+    offering: mobile-car-detailing
+    date: '2026-03-05'
+    answers: { condition: normal }
+    selections: { vehicle_size: car, package: express_wash }
+    expect:
+      status: needs_input
+      asks: water_and_power
+
+  - name: heavily soiled car, interior detail, no tap or power on site
+    offering: mobile-car-detailing
+    date: '2026-03-05'
+    answers: { condition: heavily_soiled, water_and_power: false }
+    selections: { vehicle_size: car, package: interior_detail }
+    expect:
+      status: qualified
+      total: 210 # 60 + 80 interior + 50 soiled + 20 self-contained
+      lines:
+        - { label: Heavily soiled surcharge, amount: 50 }
+        - { label: Self-contained setup, amount: 20 }
+
+  - name: pet hair removal is not offered with the express wash
+    offering: mobile-car-detailing
+    date: '2026-03-05'
+    answers: { condition: normal, water_and_power: true }
+    selections: { vehicle_size: car, package: express_wash, addons: [pet_hair_removal] }
+    expect:
+      status: blocked
+      rule: pet_hair_needs_interior
+
+  - name: biohazard cleanups are refused
+    offering: mobile-car-detailing
+    date: '2026-03-05'
+    answers: { condition: biohazard }
+    expect:
+      status: blocked
+      rule: no_biohazard

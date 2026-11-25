@@ -1,0 +1,15 @@
+# Keep secrets, payment records and local state out of the build context.
+# .env files are excluded at every depth (catalog/.env included).
+**/.env
+**/.env.*
+!**/.env.example
+data/
+*.log
+node_modules
+dist
+coverage
+.git
+.github
+.DS_Store
+*.md
+src/**/*.test.ts

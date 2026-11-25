@@ -1,0 +1,65 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+# Read-only token: CI never needs to write to the repo.
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+# Actions are pinned to full commit SHAs.
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 22 # package.json engines requires >=22; keep in sync
+          cache: npm
+
+      - run: npm ci --ignore-scripts
+
+      - run: npm run typecheck
+
+      - run: npm test
+
+      - run: npm run build
+
+      - name: Validate + test the starter catalog
+        run: |
+          npx tsx src/cli/index.ts validate --strict
+          npm run scenarios
+
+      - name: Validate + test every example business
+        run: |
+          status=0
+          for dir in examples/*/; do
+            name="$(basename "$dir")"
+            echo "::group::example: $name"
+            npx tsx src/cli/index.ts validate --strict --catalog "$dir/catalog" || status=1
+            npx tsx src/cli/index.ts test --catalog "$dir/catalog" --scenarios "$dir/scenarios" || status=1
+            echo "::endgroup::"
+          done
+          exit $status
+
+  docker:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          persist-credentials: false
+
+      - name: Build the Docker image
+        run: docker build --tag scopegraph:ci .

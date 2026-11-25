@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: city or heritage guides selling a private tour for one group.
+# Copy to catalog/offerings/, then change the group price, the party-size
+# breakpoints (6 included, 12 maximum), your guide languages and tour lengths.
+kind: product
+name: Private Guided Tour
+description: >
+  A private walking tour for your group only, led by a local guide in
+  your language. The price covers up to 6 guests; 7 to 12 guests adds a
+  second guide.
+category: Tours
+keywords: [private tour, guide, walking tour, city tour, heritage]
+date: required
+minNoticeHours: 48
+
+# One price per group, not per head: the guide's time costs the same for 2
+# guests or 6.
+price: 290
+
+ask:
+  party_size:
+    type: integer
+    label: How many people are in your group (including children)?
+    min: 1
+    max: 100
+    role: quantity # museum tickets are priced per head
+
+choose:
+  tour_length:
+    label: Tour length
+    required: true
+    options:
+      highlights_3h: { label: 'Highlights, 3 hours' }
+      half_day_5h: { label: 'Half day, 5 hours', price: 140 }
+      full_day_8h: { label: 'Full day, 8 hours with a lunch stop', price: 330 }
+  language:
+    label: Guide language
+    required: true
+    options:
+      english: { label: English }
+      spanish: { label: Spanish }
+      french: { label: French }
+      japanese: { label: Japanese (specialist guide), price: 75 }
+  transport:
+    label: Transport
+    options:
+      private_vehicle: { label: Private vehicle and driver, price: 220 }
+  entry_tickets:
+    label: Entry tickets
+    options:
+      museum_tickets:
+        label: Museum entry for the whole group
+        price: { amount: 22, per: party_size }
+        taxable: false # bought at cost on your behalf
+
+rules:
+  - id: max_party_size
+    when: { not: { party_size: { lte: 12 } } }
+    block: >
+      Private tours take up to 12 guests. For larger groups we split you
+      across two tours; contact us to arrange it.
+  - id: full_day_needs_vehicle
+    when: { selected: tour_length.full_day_8h }
+    require: transport.private_vehicle
+    message: The full-day route visits sites outside the city and needs the private vehicle
+
+pricing:
+  - id: second_guide
+    label: Second guide (7-12 guests)
+    kind: addon
+    amount: 160
+    when: { party_size: { gte: 7 } }
+    reason: Groups over 6 get a second guide

@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: music teachers and schools selling single lessons and term
+# packs. Copy to catalog/offerings/, then change the per-lesson rates,
+# the term sizes and discounts, and the age rule.
+kind: product
+name: Music Lessons
+description: >
+  Private piano, guitar, violin, voice or drum lessons at our studio.
+  30, 45 or 60 minutes; pay per lesson or save with a 10-week term or a
+  30-week year.
+category: Lessons
+keywords: [music lessons, piano, guitar, violin, voice, drums]
+
+# 30-minute rate, per lesson.
+price:
+  amount: 35
+  per: lessons
+
+ask:
+  instrument:
+    type: select
+    label: Which instrument?
+    options: [piano, guitar, violin, voice, drums]
+  student_age:
+    type: integer
+    label: How old is the student?
+    min: 3
+    max: 99
+  lesson_length:
+    type: select
+    label: Lesson length
+    options:
+      - { value: min_30, label: 30 minutes }
+      - { value: min_45, label: 45 minutes }
+      - { value: min_60, label: 60 minutes }
+  lessons:
+    type: integer
+    label: 'How many lessons: 1, a 10-week term (10) or a 30-week year (30)?'
+    min: 1
+    max: 30
+    role: quantity
+  new_student:
+    type: boolean
+    label: Is this the student's first enrollment with us?
+
+rules:
+  - id: term_sizes
+    when: { not: { lessons: { in: [1, 10, 30] } } }
+    block: We sell single lessons, 10-week terms (10 lessons) or 30-week years (30 lessons).
+  - id: young_students_30_min
+    when: { all: [ { not: { student_age: { gte: 7 } } }, { not: { lesson_length: min_30 } } ] }
+    block: Students under 7 take 30-minute lessons.
+
+pricing:
+  - id: length_45
+    label: 45-minute lessons
+    kind: addon
+    amount: 15
+    per: lessons
+    when: { lesson_length: min_45 }
+  - id: length_60
+    label: 60-minute lessons
+    kind: addon
+    amount: 30
+    per: lessons
+    when: { lesson_length: min_60 }
+  - id: term_discount
+    label: Term discount (5%)
+    kind: discount
+    percent: 5
+    when: { lessons: 10 }
+  - id: year_discount
+    label: Year discount (10%)
+    kind: discount
+    percent: 10
+    when: { lessons: 30 }
+  - id: registration
+    label: Registration fee
+    kind: fee # order 400: after the discounts, so it's never discounted
+    amount: 25
+    when: { new_student: true }

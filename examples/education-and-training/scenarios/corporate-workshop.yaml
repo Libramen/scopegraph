@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Workshop: $145 per participant (+$95 full day), $2,400 minimum topped up,
+# 30-person limit, untaxed facilitator travel, 2 weeks' notice.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: 24 people, half day, virtual
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 24, format: half_day, delivery: virtual }
+    expect:
+      status: qualified
+      total: 3480
+
+  - name: ten people are topped up to the minimum
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 10, format: half_day, delivery: virtual }
+    expect:
+      status: qualified
+      total: 2400 # 1450 + 950 top-up
+
+  - name: on-site workshops ask where the office is
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 25, format: full_day, delivery: on_site }
+    expect:
+      status: needs_input
+      asks: travel_zone
+
+  - name: 25 people, full day, on site across the country
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 25, format: full_day, delivery: on_site, travel_zone: national }
+    expect:
+      status: qualified
+      total: 7100 # 25 x (145 + 95) + 1100 travel
+      lines:
+        - { label: Facilitator travel (national), amount: 1100 }
+
+  - name: travel counts toward the minimum
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 10, format: half_day, delivery: on_site, travel_zone: national }
+    expect:
+      status: qualified
+      total: 2550 # 1450 + 1100 travel, already over 2400
+
+  - name: 40 people is over the limit
+    offering: corporate-workshop
+    date: '2026-04-15'
+    answers: { participants: 40 }
+    expect:
+      status: blocked
+      rule: max_participants
+
+  - name: next week is too soon
+    offering: corporate-workshop
+    date: '2026-03-09'
+    answers: { participants: 12, format: half_day, delivery: virtual }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

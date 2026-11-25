@@ -1,0 +1,47 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: design studios and freelance designers selling brand identity in
+# tiers. Copy to catalog/offerings/, then change the tier prices and what
+# each includes, and the naming rule.
+kind: product
+name: Brand Identity Package
+description: >
+  Discovery plus a brand identity in three tiers: Essentials (logo
+  and palette), Signature (full identity and guidelines) or Complete
+  (identity, guidelines and launch templates).
+category: Branding
+keywords: [branding, brand identity, logo, design, guidelines]
+
+# Discovery and moodboards, included with every tier.
+price: 1500
+
+ask:
+  name_final:
+    type: boolean
+    label: Is your company or product name final?
+
+choose:
+  tier:
+    label: Package
+    required: true
+    options:
+      essentials:
+        label: Essentials — logo, palette, type
+        price: 3000
+      signature:
+        label: Signature — full identity and brand guidelines
+        price: 8000
+      complete:
+        label: Complete — Signature plus launch templates
+        price: 16500
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      naming: { label: Naming and trademark screen, price: 3500 }
+      extra_revision_round: { label: Extra revision round, price: 750 }
+
+rules:
+  - id: name_before_logo
+    when: { name_final: false }
+    require: extras.naming
+    message: We design around a final name, so an unfinished name needs the naming add-on.

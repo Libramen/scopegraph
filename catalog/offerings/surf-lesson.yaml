@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../schema/offering.schema.json
+# A product priced per surfer. Board and suit hire, and the rules about them,
+# are on first-wave-weekend.yaml: the compiler rejects a product inside a
+# package that has rules about its own option groups.
+kind: product
+name: Linda Mar Group Lesson
+description: >
+  Two hours in the whitewater at Linda Mar with two instructors and up to ten
+  surfers. Board and suit hire come with the First Wave Weekend package.
+category: Lessons
+keywords: [surf, lesson, group, pacifica]
+status: active
+date: required # no quote without a lesson date
+minNoticeHours: 48 # dates less than two days away are refused
+
+# $95 for each surfer: `per` names the parameter holding the head count.
+price:
+  amount: 95
+  per: surfers
+
+# Asked top to bottom. Required questions are always asked; an optional one
+# is asked only when a rule or a price line needs its answer.
+ask:
+  surfers:
+    type: integer
+    label: How many people are surfing?
+    min: 1
+    max: 10
+    role: quantity # the head count the price is multiplied by
+  cold_water_ok:
+    type: boolean
+    label: Is everyone happy to spend two hours in 50-58°F water?
+  surf_history:
+    type: select
+    label: How much surfing has the group done?
+    options:
+      - { value: first_time, label: Never surfed }
+      - { value: whitewater, label: Rides broken waves }
+      - { value: open_face, label: Rides unbroken waves }
+
+rules:
+  # Refuse unless the answer is a clear yes. While the question is unanswered
+  # the condition can't be decided, so the engine asks it rather than refusing.
+  - id: cold_water
+    when: { not: { cold_water_ok: true } }
+    block: The water at Linda Mar stays between 50 and 58°F all year, so every surfer needs to be comfortable in the cold
+  # `tide_ft` is a required fact, so it always has a value here and the rule
+  # can test it directly.
+  - id: tide_window
+    when: { tide_ft: { gt: 5.5 } }
+    block: We don't teach when the tide is above 5.5 ft, because the shorebreak gets too steep
+
+pricing:
+  # Lines the buyer never picks: they switch on by date.
+  - id: weekend_surcharge
+    label: Weekend surcharge
+    kind: surcharge
+    amount: 10
+    per: surfers # $10 for each surfer
+    when: { isWeekend: true }
+    reason: Saturday and Sunday lessons
+  - id: summer_surcharge
+    label: Summer holiday surcharge
+    kind: surcharge
+    percent: 20
+    basis: base # 20% of the lesson price only
+    when: { isPeak: true }
+    reason: School summer holidays (Jun 20 - Aug 31)

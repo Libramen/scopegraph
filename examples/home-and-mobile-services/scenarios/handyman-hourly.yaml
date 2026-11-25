@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $85/hour, topped up to a $170 (two-hour) minimum; +$40 when booked less
+# than 3 days ahead; new wiring/plumbing and larger projects are refused.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: three hours of mounting and assembly next week
+    offering: handyman-hourly
+    date: '2026-03-10'
+    answers: { job_types: [mounting, assembly], hours: 3 }
+    expect:
+      status: qualified
+      total: 255 # 3 x 85
+
+  - name: a one-hour job is charged the two-hour minimum
+    offering: handyman-hourly
+    date: '2026-03-10'
+    answers: { job_types: [minor_repair], hours: 1 }
+    expect:
+      status: qualified
+      total: 170 # 85, topped up by 85
+      lines:
+        - { label: Minimum spend, amount: 85 }
+
+  - name: booking two days out adds the rush surcharge
+    offering: handyman-hourly
+    date: '2026-03-04'
+    answers: { job_types: [fixture_swap], hours: 2 }
+    expect:
+      status: qualified
+      total: 210 # 2 x 85 + 40 rush
+      lines:
+        - { label: Rush booking, amount: 40 }
+
+  - name: new wiring is outside handyman work
+    offering: handyman-hourly
+    date: '2026-03-10'
+    answers: { job_types: [mounting, new_wiring_or_plumbing] }
+    expect:
+      status: blocked
+      rule: not_handyman_work
+
+  - name: a larger project is pointed at the site survey
+    offering: handyman-hourly
+    date: '2026-03-10'
+    answers: { job_types: [larger_project] }
+    expect:
+      status: blocked
+      rule: needs_site_survey

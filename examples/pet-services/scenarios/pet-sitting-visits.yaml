@@ -1,0 +1,54 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $28 per 30-minute visit (+$18 for 60 minutes); two pets included, $5 per
+# visit for each extra pet; +$8 per visit when the first visit falls in a
+# holiday window; injections need 60-minute visits.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: six 30-minute visits for two pets
+    offering: pet-sitting-visits
+    date: '2026-03-05'
+    answers: { visits: 6, pets: 2, key_access: lockbox_or_code, medication: none }
+    selections: { visit_length: thirty_min }
+    expect:
+      status: qualified
+      total: 168 # 6 x 28
+
+  - name: four pets with insulin, four 60-minute visits
+    offering: pet-sitting-visits
+    date: '2026-03-05'
+    answers: { visits: 4, pets: 4, key_access: key_handover, medication: injection }
+    selections: { visit_length: sixty_min }
+    expect:
+      status: qualified
+      total: 224 # 4 x 28 + 4 x 18 longer + 2 extra pets x 4 x 5
+      lines:
+        - { label: Extra pets, amount: 40 }
+
+  - name: injections with a 30-minute visit are refused
+    offering: pet-sitting-visits
+    date: '2026-03-05'
+    answers: { visits: 4, pets: 1, key_access: key_handover, medication: injection }
+    selections: { visit_length: thirty_min }
+    expect:
+      status: blocked
+      rule: injections_need_long_visit
+
+  - name: no way into the home is refused
+    offering: pet-sitting-visits
+    date: '2026-03-05'
+    answers: { visits: 4, pets: 1, key_access: none }
+    expect:
+      status: blocked
+      rule: needs_key_access
+
+  - name: a booking starting at Christmas pays the holiday rate
+    offering: pet-sitting-visits
+    date: '2026-12-22'
+    answers: { visits: 10, pets: 1, key_access: lockbox_or_code, medication: none }
+    selections: { visit_length: thirty_min }
+    expect:
+      status: qualified
+      total: 360 # 10 x 28 + 10 x 8 holiday
+      lines:
+        - { label: Holiday rate, amount: 80 }

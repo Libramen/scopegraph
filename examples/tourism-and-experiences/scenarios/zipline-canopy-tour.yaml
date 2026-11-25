@@ -1,0 +1,45 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Zipline canopy tour: $99 per adult, $79 per child rider (10-11), age,
+# weight and waiver rules. Sales tax 7%. 2026-04-14 is a Tuesday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: the first question is the rider count
+    offering: zipline-canopy-tour
+    date: '2026-04-14'
+    expect:
+      status: needs_input
+      asks: adults
+
+  - name: two adults, a 10-year-old and the ride photos
+    offering: zipline-canopy-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 1, youngest_child_age: 10, heaviest_rider_lb: 210, waiver_accepted: true }
+    selections: { gear: [ride_photos] }
+    expect:
+      status: qualified
+      total: 348.82 # 198 + 79 + 49; tax 22.82
+
+  - name: no waiver, no ride
+    offering: zipline-canopy-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 180, waiver_accepted: false }
+    expect:
+      status: blocked
+      rule: waiver
+
+  - name: a 290 lb rider is over the weight limit
+    offering: zipline-canopy-tour
+    date: '2026-04-14'
+    answers: { adults: 2, children: 0, heaviest_rider_lb: 290, waiver_accepted: true }
+    expect:
+      status: blocked
+      rule: max_rider_weight
+
+  - name: an 8-year-old is too young to ride
+    offering: zipline-canopy-tour
+    date: '2026-04-14'
+    answers: { adults: 1, children: 1, youngest_child_age: 8 }
+    expect:
+      status: blocked
+      rule: min_rider_age

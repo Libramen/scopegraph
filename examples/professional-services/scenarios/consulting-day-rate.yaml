@@ -1,0 +1,57 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Day rate: $1,800 x days; on-site domestic work adds untaxed travel and a
+# per diem; the travel zone is only asked for on-site work.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: three remote days
+    offering: consulting-day-rate
+    answers: { days: 3, delivery: remote }
+    expect:
+      status: qualified
+      total: 5400
+
+  - name: on-site work asks where the site is
+    offering: consulting-day-rate
+    answers: { days: 4, delivery: on_site }
+    expect:
+      status: needs_input
+      asks: travel_zone
+
+  - name: four on-site days elsewhere in the US add travel and per diem
+    offering: consulting-day-rate
+    answers: { days: 4, delivery: on_site, travel_zone: domestic }
+    expect:
+      status: qualified
+      total: 8480 # 7200 + 900 travel + 4 x 95 per diem
+      lines:
+        - { label: Travel (flights and ground), amount: 900 }
+        - { label: Per diem (hotel and meals), amount: 380 }
+
+  - name: local on-site days carry no travel
+    offering: consulting-day-rate
+    answers: { days: 2, delivery: on_site, travel_zone: local }
+    expect:
+      status: qualified
+      total: 3600
+
+  - name: international on-site work is refused
+    offering: consulting-day-rate
+    answers: { days: 2, delivery: on_site, travel_zone: international }
+    expect:
+      status: blocked
+      rule: no_international
+
+  - name: more than 15 days becomes a proposal
+    offering: consulting-day-rate
+    answers: { days: 20, delivery: remote }
+    expect:
+      status: blocked
+      rule: max_days
+
+  - name: zero days is a caller error
+    offering: consulting-day-rate
+    answers: { days: 0, delivery: remote }
+    expect:
+      status: invalid
+      error: answers.days

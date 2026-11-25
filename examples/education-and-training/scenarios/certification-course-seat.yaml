@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Certification seat: $1,495 per seat, $150/seat off for 3+, exam voucher
+# $295 per seat, prerequisites refuse, max 6 seats, a week's notice.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: the cohort date is asked first
+    offering: certification-course-seat
+    expect:
+      status: needs_input
+      asks: date
+
+  - name: one qualified attendee
+    offering: certification-course-seat
+    date: '2026-04-13'
+    answers: { seats: 1, holds_level_1: true, years_experience: 3 }
+    expect:
+      status: qualified
+      total: 1495
+
+  - name: four seats with exam vouchers get the team rate
+    offering: certification-course-seat
+    date: '2026-04-13'
+    answers: { seats: 4, holds_level_1: true, years_experience: 5 }
+    selections: { extras: [exam_voucher] }
+    expect:
+      status: qualified
+      total: 6560 # 4 x 1495 - 4 x 150 + 4 x 295
+      lines:
+        - { label: Team rate (3+ seats), amount: -600 }
+
+  - name: no Level 1 certificate is refused
+    offering: certification-course-seat
+    date: '2026-04-13'
+    answers: { seats: 1, holds_level_1: false }
+    expect:
+      status: blocked
+      rule: level_1_required
+
+  - name: one year of practice is refused
+    offering: certification-course-seat
+    date: '2026-04-13'
+    answers: { seats: 2, holds_level_1: true, years_experience: 1 }
+    expect:
+      status: blocked
+      rule: experience_required
+
+  - name: more than six seats is a private cohort
+    offering: certification-course-seat
+    date: '2026-04-13'
+    answers: { seats: 8 }
+    expect:
+      status: blocked
+      rule: max_seats
+
+  - name: registration closes a week before the cohort
+    offering: certification-course-seat
+    date: '2026-03-06'
+    answers: { seats: 1, holds_level_1: true, years_experience: 3 }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

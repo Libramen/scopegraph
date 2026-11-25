@@ -1,0 +1,19 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the creative and agency examples. Copy the parts you
+# need into your own catalog/business.yaml: timezone and the hand-off.
+#
+# No taxRate: whether design, copy, video or photography is taxed depends
+# on your state and on what you deliver (files vs prints). Ask your
+# accountant, then add `taxRate:` if it applies.
+name: Example — Creative & agency
+description: >
+  Productized creative services: brand identity, websites, video,
+  copywriting and corporate headshots.
+currency: USD
+timezone: America/Los_Angeles
+
+# Only qualified quotes carry this hand-off; blocked quotes show the rule's
+# own message instead.
+handoff:
+  url: https://book.example/start?offering={offering}&{params}
+  message: Book a kickoff call to confirm the brief and sign the agreement.

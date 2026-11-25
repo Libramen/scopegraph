@@ -1,0 +1,64 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: training providers selling seats on a certification course with
+# prerequisites. Copy to catalog/offerings/, then change the seat price,
+# the prerequisites, the team rate and the most seats per booking.
+kind: product
+name: Level 2 Certification Course
+description: >
+  Four-day instructor-led course preparing for the Level 2 certification
+  exam. For holders of the Level 1 certificate with 2+ years of practice.
+  The date is the cohort start date.
+category: Certification
+keywords: [certification, course, training, exam, professional development]
+date: required # cohort start
+minNoticeHours: 168 # registration closes a week before
+
+price:
+  amount: 1495
+  per: seats
+
+ask:
+  seats:
+    type: integer
+    label: How many seats?
+    min: 1
+    max: 100
+    role: quantity
+  holds_level_1:
+    type: boolean
+    label: Does every attendee hold the Level 1 certificate?
+  years_experience:
+    type: integer
+    label: Fewest years of practice among the attendees?
+    min: 0
+    max: 60
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      exam_voucher:
+        label: Exam voucher (one per seat)
+        price: { amount: 295, per: seats }
+        taxable: false # pass-through to the exam body
+
+rules:
+  - id: max_seats
+    when: { seats: { gt: 6 } }
+    block: Groups over 6 get a private cohort; email hello@training.example.
+  - id: level_1_required
+    when: { not: { holds_level_1: true } }
+    block: Every attendee needs the Level 1 certificate first.
+  - id: experience_required
+    when: { not: { years_experience: { gte: 2 } } }
+    block: Every attendee needs at least 2 years of practice.
+
+pricing:
+  - id: team_rate
+    label: Team rate (3+ seats)
+    kind: discount
+    per: seats
+    tiers:
+      - { from: 0, to: 2, amount: 0 }
+      - { from: 3, amount: 150 }

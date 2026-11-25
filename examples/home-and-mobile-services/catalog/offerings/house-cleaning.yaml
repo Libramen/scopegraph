@@ -1,0 +1,102 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: residential cleaning priced by bedrooms and bathrooms.
+# Copy to catalog/offerings/, then change the base and per-room rates, the
+# deep/move-out percentages, the pets surcharge and the 3,500 sq ft limit.
+kind: product
+name: House cleaning
+description: >
+  A home clean priced by bedrooms and bathrooms. Standard, deep or move-out
+  clean, with optional oven, fridge and laundry add-ons. Homes up to
+  3,500 sq ft.
+category: Cleaning
+keywords: [cleaning, maid, house, deep clean, move out]
+date: required
+minNoticeHours: 24
+
+# Covers the kitchen and living areas; rooms are added per unit below.
+price: 90
+
+ask:
+  square_feet:
+    type: integer
+    label: Roughly how many square feet is the home?
+    min: 200
+    max: 20000
+  bedrooms:
+    type: integer
+    label: How many bedrooms?
+    min: 0
+    max: 10
+    role: quantity
+  bathrooms:
+    type: integer
+    label: How many bathrooms (count half baths as one)?
+    min: 1
+    max: 10
+    role: quantity
+  pets_in_home:
+    type: boolean
+    label: Are there pets in the home?
+    required: false # asked only because the pet-hair surcharge needs it
+    role: fact
+
+choose:
+  clean_type:
+    label: Type of clean
+    mode: single
+    required: true
+    options:
+      standard: { label: Standard clean }
+      deep_clean:
+        label: Deep clean (baseboards, inside cabinets, detailed scrub)
+        pricing:
+          # Order 80: after the base and room lines (order 50), before the
+          # add-ons (default order 100), so the % never applies to add-ons.
+          - { label: Deep clean, kind: surcharge, percent: 50, basis: running, order: 80 }
+      move_out:
+        label: Move-out clean (empty home, oven and fridge included)
+        pricing:
+          - { label: Move-out clean, kind: surcharge, percent: 75, basis: running, order: 80 }
+  extras:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      inside_oven: { label: Inside the oven, price: 35 }
+      inside_fridge: { label: Inside the fridge, price: 30 }
+      laundry: { label: Wash and fold one load, price: 20 }
+
+rules:
+  - id: max_home_size
+    when: { not: { square_feet: { lte: 3500 } } }
+    block: >
+      We quote homes over 3,500 sq ft after a walkthrough. Email
+      office@homeservices.example to book one.
+  - id: move_out_includes_oven
+    when: { selected: clean_type.move_out }
+    exclude: extras.inside_oven
+    message: A move-out clean already includes the oven
+  - id: move_out_includes_fridge
+    when: { selected: clean_type.move_out }
+    exclude: extras.inside_fridge
+    message: A move-out clean already includes the fridge
+
+pricing:
+  - id: per_bedroom
+    label: Bedrooms
+    kind: addon
+    amount: 20
+    per: bedrooms
+    order: 50
+  - id: per_bathroom
+    label: Bathrooms
+    kind: addon
+    amount: 25
+    per: bathrooms
+    order: 50
+  - id: pet_hair
+    label: Pet hair surcharge
+    kind: surcharge
+    amount: 15
+    when: { pets_in_home: true }
+    reason: Extra vacuuming for pet hair

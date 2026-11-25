@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: a dog walker selling single walks and packs of walks. Copy to
+# catalog/offerings/, then change the per-walk rate, the pack tiers, the
+# extra-dog charge and the dogs-per-walker limit.
+kind: product
+name: Dog walking
+description: >
+  Solo walks of 30 or 60 minutes, booked singly or in packs (5+ walks and
+  10+ walks cost less per walk). Up to 3 dogs from the same home. New
+  clients start with a free meet-and-greet.
+category: Walking
+keywords: [dog walker, dog walking, walks, pack]
+date: required # the first walk
+minNoticeHours: 24
+
+price:
+  amount: 25
+  per: walks
+
+ask:
+  walks:
+    type: integer
+    label: How many walks are you booking?
+    min: 1
+    max: 60
+    role: quantity
+  dogs:
+    type: integer
+    label: How many dogs?
+    min: 1
+    max: 10
+  new_client:
+    type: boolean
+    label: Is this your first booking with us?
+
+choose:
+  walk_length:
+    label: Walk length
+    mode: single
+    required: true
+    options:
+      thirty_min: { label: 30 minutes }
+      sixty_min: { label: 60 minutes, price: { amount: 15, per: walks } }
+  intro:
+    label: Meet-and-greet
+    mode: multi
+    required: false # asked only when the new_client rule requires it
+    options:
+      meet_and_greet: { label: Free 15-minute meet-and-greet before the first walk }
+
+rules:
+  - id: max_dogs
+    when: { not: { dogs: { lte: 3 } } }
+    block: One walker takes at most 3 dogs from the same home.
+  - id: new_clients_meet_first
+    when: { new_client: true }
+    require: intro.meet_and_greet
+    message: New clients start with a meet-and-greet so we can meet your dog
+
+pricing:
+  # Pack tiers: every walk in the booking gets the discount of the tier
+  # the walk count lands in (7 walks -> 7 x $3).
+  - id: pack_discount
+    label: Pack discount
+    kind: discount
+    per: walks
+    tiers:
+      - { from: 0, to: 4, amount: 0 }
+      - { from: 5, to: 9, amount: 3 }
+      - { from: 10, amount: 5 }
+  - id: additional_dogs
+    label: Additional dogs
+    kind: addon
+    formula: (dogs - 1) * walks * 10
+    when: { dogs: { gte: 2 } }
+    reason: $10 per walk for each dog after the first

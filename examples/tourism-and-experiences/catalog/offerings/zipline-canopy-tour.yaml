@@ -1,0 +1,81 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: adventure activities with safety limits (zipline, ropes
+# course, via ferrata). Copy to catalog/offerings/, then change the rider
+# prices, the age and weight limits and the gear. Also inside
+# three-night-adventure-trip: keep adults/children/youngest_child_age
+# identical to the day tour's.
+kind: product
+name: Zipline Canopy Tour
+description: >
+  A guided 2.5-hour canopy tour with eight ziplines. Riders must be 10 or
+  older, weigh no more than 250 lb and sign the liability waiver. Helmet
+  camera and ride photos available.
+category: Activities
+keywords: [zipline, canopy tour, adventure, outdoor activity]
+date: required
+minNoticeHours: 24
+
+price:
+  amount: 99
+  per: adults
+
+ask:
+  adults:
+    type: integer
+    label: How many adults (12 and over)?
+    min: 1
+    max: 30
+    role: quantity
+  children:
+    type: integer
+    label: How many children under 12?
+    min: 0
+    max: 20
+    role: quantity
+  youngest_child_age:
+    type: integer
+    label: How old is the youngest child?
+    required: false
+    min: 0
+    max: 11
+  heaviest_rider_lb:
+    type: number
+    label: What does the heaviest rider weigh (lb)?
+    min: 0
+    max: 1000
+  waiver_accepted:
+    type: boolean
+    label: Will every rider (or a parent, for minors) sign the liability waiver before the tour?
+
+# Option groups. This product goes inside a package, so it must not carry
+# rules about its own groups; put any such rule on the package instead.
+choose:
+  gear:
+    label: Gear and photos
+    mode: multi
+    options:
+      helmet_camera: { label: Helmet camera rental, price: 29 }
+      ride_photos: { label: Digital ride photos for the group, price: 49 }
+
+rules:
+  # Each rule blocks unless its condition is known to hold, so an unanswered
+  # question is asked rather than assumed.
+  - id: min_rider_age
+    when: { all: [ { children: { gte: 1 } }, { not: { youngest_child_age: { gte: 10 } } } ] }
+    block: Riders must be at least 10 years old
+  - id: max_rider_weight
+    when: { not: { heaviest_rider_lb: { lte: 250 } } }
+    block: Riders must weigh 250 lb or less
+  - id: waiver
+    when: { not: { waiver_accepted: true } }
+    block: Every rider must sign the liability waiver to ride
+  - id: guide_ratio
+    when: { not: { adults: { lte: 10 } } }
+    block: One guide team takes up to 10 riders; book two departures for bigger groups
+
+pricing:
+  - id: child_riders
+    label: Child riders (10-11)
+    kind: addon
+    amount: 79
+    per: children

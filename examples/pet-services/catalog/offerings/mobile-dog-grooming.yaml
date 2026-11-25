@@ -1,0 +1,97 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: a grooming van that comes to the customer's driveway. Copy to
+# catalog/offerings/, then change the size and groom prices, the add-ons,
+# the weekend %, the 48h notice and the travel zones.
+kind: product
+name: Mobile dog grooming
+description: >
+  Grooming in our van at your door: bath and tidy or a full haircut,
+  priced by dog size, with nail, teeth and de-shedding add-ons. Within 20
+  miles; book 48 hours ahead.
+category: Grooming
+keywords: [dog grooming, mobile groomer, bath, haircut, nails]
+date: required
+minNoticeHours: 48
+
+price: 75 # bath and tidy for a small dog; size and groom options add to it
+
+ask:
+  bite_history:
+    type: boolean
+    label: Has your dog ever bitten or snapped at a groomer, vet or person?
+  coat_condition:
+    type: select
+    label: What is the coat like right now?
+    options:
+      - { value: good, label: Brushed and tangle-free }
+      - { value: light_matting, label: A few mats or tangles }
+      - { value: severe_matting, label: Matted close to the skin }
+  distance_miles:
+    type: integer
+    label: How many miles are you from our base (whole miles)?
+    min: 0
+    max: 500
+
+choose:
+  dog_size:
+    label: Dog size
+    mode: single
+    required: true
+    options:
+      small: { label: Small (under 20 lb) }
+      medium: { label: Medium (20-50 lb), price: 20 }
+      large: { label: Large (50-90 lb), price: 40 }
+      giant: { label: Giant (over 90 lb), price: 65 }
+  groom:
+    label: Service
+    mode: single
+    required: true
+    options:
+      bath_and_tidy: { label: 'Bath, brush-out and tidy' }
+      full_groom: { label: Full groom with haircut, price: 30 }
+  addons:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      nail_grind: { label: Nail grind, price: 15 }
+      teeth_brushing: { label: Teeth brushing, price: 12 }
+      de_shedding: { label: De-shedding treatment, price: 25 }
+      flea_shampoo: { label: Flea shampoo, price: 18 }
+
+rules:
+  - id: no_bite_history
+    when: { bite_history: true }
+    block: >
+      For everyone's safety we don't groom dogs with a bite history in the
+      van. A vet clinic groomer with sedation available is the safer option.
+  - id: no_severe_matting
+    when: { coat_condition: severe_matting }
+    block: Coats matted to the skin need a shave-down at a vet clinic first.
+  - id: service_area
+    when: { not: { distance_miles: { lte: 20 } } }
+    block: We groom within 20 miles of our base.
+
+pricing:
+  - id: dematting
+    label: Dematting
+    kind: addon
+    amount: 20
+    when: { coat_condition: light_matting }
+  # Running %, at the surcharge default (order 300): after the groom lines
+  # (size, service, add-ons and dematting are add-ons at order 100) and
+  # before the travel fee (fees run at 400), so the weekend rate covers the
+  # whole groom, never the travel.
+  - id: weekend
+    label: Weekend appointment
+    kind: surcharge
+    percent: 20
+    basis: running
+    when: { isWeekend: true }
+    reason: Saturday and Sunday appointments
+  - id: travel
+    label: Travel (10-20 miles)
+    kind: fee
+    amount: 15
+    when: { distance_miles: { gt: 10 } }
+    taxable: false # pass-through: stays out of the tax base if you add tax

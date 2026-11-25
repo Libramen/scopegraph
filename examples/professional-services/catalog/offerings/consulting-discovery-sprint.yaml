@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: consultants who sell a fixed-fee discovery sprint as the paid
+# first step before a larger engagement. Copy to catalog/offerings/, then
+# change the fee, the interview allowance and who you refuse.
+kind: product
+name: Discovery Sprint
+description: >
+  Two-week fixed-fee discovery: up to 8 stakeholder interviews, a current-state
+  review and a written readout with a prioritized plan. The usual first step
+  before a larger proposal.
+category: Consulting
+keywords: [consulting, discovery, strategy, sprint, assessment]
+
+price: 6500
+
+ask:
+  company_size:
+    type: select
+    label: How many people work at your company?
+    options:
+      - { value: up_to_50, label: 1–50 }
+      - { value: up_to_250, label: 51–250 }
+      - { value: up_to_1000, label: '251–1,000' }
+      - { value: over_1000, label: 'More than 1,000' }
+  focus_area:
+    type: select
+    label: What should the sprint focus on?
+    options: [strategy, operations, technology, go_to_market]
+  decision_maker:
+    type: boolean
+    label: Will a decision-maker attend the kickoff and the readout?
+  stakeholder_interviews:
+    type: integer
+    label: How many people should we interview?
+    description: Eight interviews are included; the interview pack adds eight more.
+    min: 1
+    max: 100
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      interview_pack:
+        label: Eight more interviews (up to 16)
+        price: 2000
+      onsite_workshop:
+        label: One-day on-site workshop
+        price: 2400
+        pricing:
+          - id: workshop_travel
+            label: Workshop travel
+            kind: fee
+            amount: 650
+            taxable: false # pass-through: flights and hotel
+            reason: Travel for the on-site day
+
+rules:
+  - id: no_large_org
+    when: { company_size: over_1000 }
+    block: >
+      Discovery for organisations over 1,000 people is scoped as a custom
+      proposal. Email hello@consulting.example with your brief.
+  - id: decision_maker_required
+    when: { not: { decision_maker: true } }
+    block: We only run sprints with a decision-maker at the kickoff and readout.
+  - id: interviews_over_allowance
+    when: { stakeholder_interviews: { gt: 8 } }
+    require: extras.interview_pack
+    message: More than 8 interviews needs the interview pack.
+  - id: max_interviews
+    when: { stakeholder_interviews: { gt: 16 } }
+    block: >
+      More than 16 interviews is a larger engagement. Email
+      hello@consulting.example for a proposal.

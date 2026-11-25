@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the education and training examples. Copy the parts
+# you need into your own catalog/business.yaml: timezone and the hand-off.
+#
+# No taxRate: tuition and training are untaxed in most US states. If yours
+# are taxed, add `taxRate:`; pass-through lines (travel, exam vouchers)
+# are already marked `taxable: false`.
+name: Example — Education & training
+description: >
+  Tutoring, music lessons, corporate workshops and certification courses.
+currency: USD
+timezone: America/Chicago
+
+# Only qualified quotes carry this hand-off.
+handoff:
+  url: https://book.example/start?offering={offering}&{params}
+  message: Pick a start time and complete enrollment on the booking page.

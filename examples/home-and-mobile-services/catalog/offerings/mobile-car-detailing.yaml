@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: a mobile detailer that comes to the customer's driveway or
+# office. Copy to catalog/offerings/, then change the package prices (each
+# is on top of the express wash), the vehicle-size uplifts and the add-ons.
+kind: product
+name: Mobile car detailing
+description: >
+  Car detailing at your home or workplace: express wash, interior detail or
+  full detail, priced by vehicle size, with add-ons such as pet hair
+  removal and headlight restoration.
+category: Auto
+keywords: [car wash, detailing, mobile detailing, interior, ceramic]
+date: required
+minNoticeHours: 24
+
+price: 60 # the express exterior wash on a car; packages and sizes add to it
+
+ask:
+  condition:
+    type: select
+    label: What state is the vehicle in?
+    options:
+      - { value: normal, label: Normal everyday use }
+      - { value: heavily_soiled, label: 'Heavily soiled (mud, sand, spills)' }
+      - { value: biohazard, label: 'Mold, vomit or other biohazard' }
+  water_and_power:
+    type: boolean
+    label: Can we use an outdoor tap and a power outlet?
+    required: false # asked only because the self-contained surcharge needs it
+    role: fact
+
+choose:
+  vehicle_size:
+    label: Vehicle size
+    mode: single
+    required: true
+    options:
+      car: { label: 'Car (sedan, coupe, hatchback)' }
+      suv_or_truck: { label: SUV or pickup, price: 25 }
+      van_or_three_row: { label: Van or 3-row SUV, price: 45 }
+  package:
+    label: Package
+    mode: single
+    required: true
+    options:
+      express_wash: { label: Express exterior wash }
+      interior_detail: { label: 'Interior detail (vacuum, shampoo, wipe-down) plus wash', price: 80 }
+      full_detail: { label: 'Full detail (interior, clay bar and wax)', price: 150 }
+  addons:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      pet_hair_removal: { label: Pet hair removal, price: 40 }
+      engine_bay: { label: Engine bay clean, price: 35 }
+      headlight_restoration: { label: Headlight restoration, price: 60 }
+      ceramic_spray: { label: Ceramic spray sealant, price: 50 }
+
+rules:
+  - id: no_biohazard
+    when: { condition: biohazard }
+    block: We don't clean mold or biohazards; that needs a specialist remediation service.
+  - id: pet_hair_needs_interior
+    when: { selected: addons.pet_hair_removal }
+    exclude: package.express_wash
+    message: Pet hair removal needs the interior or full detail
+
+pricing:
+  - id: heavily_soiled
+    label: Heavily soiled surcharge
+    kind: surcharge
+    amount: 50
+    when: { condition: heavily_soiled }
+    reason: Extra time for mud, sand and spills
+  - id: self_contained
+    label: Self-contained setup
+    kind: surcharge
+    amount: 20
+    when: { water_and_power: false }
+    reason: We bring our own water tank and generator

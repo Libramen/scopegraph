@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Seated wine tasting: $45 per guest, table-size savings (6-11: $5,
+# 12+: $8 per guest), 21+ only, refused over 24. Sales tax 7%.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: four guests, estate flight
+    offering: wine-tasting-experience
+    date: '2026-04-14'
+    answers: { guests: 4, all_guests_21_plus: true }
+    selections: { flight: estate }
+    expect:
+      status: qualified
+      total: 192.6 # 180; tax 12.60
+
+  - name: eight guests, reserve flight with pairing, $5 table saving
+    offering: wine-tasting-experience
+    date: '2026-04-14'
+    answers: { guests: 8, all_guests_21_plus: true }
+    selections: { flight: reserve, pairing: cheese_and_charcuterie }
+    expect:
+      status: qualified
+      subtotal: 624 # 360 + 160 + 144 - 40
+      total: 667.68
+      lines:
+        - { label: Larger-table saving, amount: -40 }
+
+  - name: twelve guests get the $8 tier
+    offering: wine-tasting-experience
+    date: '2026-04-14'
+    answers: { guests: 12, all_guests_21_plus: true }
+    selections: { flight: estate }
+    expect:
+      status: qualified
+      total: 475.08 # 540 - 96; tax 31.08
+
+  - name: anyone under 21 and the booking is refused
+    offering: wine-tasting-experience
+    date: '2026-04-14'
+    answers: { guests: 4, all_guests_21_plus: false }
+    expect:
+      status: blocked
+      rule: legal_age
+
+  - name: thirty guests is a private event
+    offering: wine-tasting-experience
+    date: '2026-04-14'
+    answers: { guests: 30, all_guests_21_plus: true }
+    expect:
+      status: blocked
+      rule: max_group

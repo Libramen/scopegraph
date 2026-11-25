@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $45 small lot, +$20 medium, +$45 large; weekly -15% / every two weeks -10%
+# on the mow only (not on add-ons); lots over an acre are refused.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: lot size is asked first
+    offering: lawn-care-visit
+    expect:
+      status: needs_input
+      asks: lot_size
+
+  - name: one-time mow of a small lot
+    offering: lawn-care-visit
+    answers: { lot_size: small, frequency: one_time }
+    expect:
+      status: qualified
+      total: 45
+
+  - name: weekly medium lot with hedge trimming
+    offering: lawn-care-visit
+    answers: { lot_size: medium, frequency: weekly }
+    selections: { extras: [hedge_trimming] }
+    expect:
+      status: qualified
+      total: 90.25 # (45 + 20) - 15% + 35 hedges
+      lines:
+        - { label: Weekly schedule discount, amount: -9.75 }
+        - { label: Hedge trimming, amount: 35 }
+
+  - name: large lot every two weeks
+    offering: lawn-care-visit
+    answers: { lot_size: large, frequency: every_two_weeks }
+    expect:
+      status: qualified
+      total: 81 # (45 + 45) - 10%
+
+  - name: lots over an acre are refused (site visit first)
+    offering: lawn-care-visit
+    answers: { lot_size: over_one_acre }
+    expect:
+      status: blocked
+      rule: max_lot_size

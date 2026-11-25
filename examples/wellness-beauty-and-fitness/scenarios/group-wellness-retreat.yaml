@@ -1,0 +1,55 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Group retreat: $900 host fee + $140 programme per guest-night + room per
+# guest-night, 12% summer peak on all of that, shuttle passed through after.
+# No sales tax. 2026-03-10 is off-peak; 2026-07-14 is peak.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: ten guests, three nights, twin share, off-peak
+    offering: group-wellness-retreat
+    date: '2026-03-10'
+    answers: { guests: 10, nights: 3 }
+    selections: { room_type: twin_share }
+    expect:
+      status: qualified
+      total: 7950 # 900 + 4200 programme + 2850 rooms
+      lines:
+        - { label: Programme and meals, amount: 4200 }
+        - { label: Twin share, amount: 2850 }
+
+  - name: twelve guests, four nights, own rooms and shuttle in peak season
+    offering: group-wellness-retreat
+    date: '2026-07-14'
+    answers: { guests: 12, nights: 4 }
+    selections: { room_type: own_room, transfers: airport_shuttle }
+    expect:
+      status: qualified
+      total: 17616 # 900 + 6720 + 7680 + 1836 peak + 480 shuttle
+      lines:
+        - { label: Peak season, amount: 1836 }
+        - { label: Airport shuttle, amount: 480 }
+
+  - name: six guests is below the group minimum
+    offering: group-wellness-retreat
+    date: '2026-03-10'
+    answers: { guests: 6, nights: 3 }
+    expect:
+      status: blocked
+      rule: min_group
+
+  - name: one night is too short
+    offering: group-wellness-retreat
+    date: '2026-03-10'
+    answers: { guests: 10, nights: 1 }
+    expect:
+      status: blocked
+      rule: min_nights
+
+  - name: arriving in under 30 days is refused
+    offering: group-wellness-retreat
+    date: '2026-01-20'
+    answers: { guests: 10, nights: 3 }
+    selections: { room_type: twin_share }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

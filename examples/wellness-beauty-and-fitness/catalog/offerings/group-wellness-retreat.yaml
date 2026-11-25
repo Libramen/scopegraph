@@ -1,0 +1,88 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: retreat centres and hosts selling multi-night group retreats
+# (yoga, wellness, team offsites). Copy to catalog/offerings/, then change
+# the host fee, the per guest-night rates, the group and night limits, and
+# the peak season in business.yaml.
+kind: product
+name: Group Wellness Retreat
+description: >
+  A private retreat for your group of 8 to 24 at our lodge, 2 to 6 nights,
+  with daily yoga, workshops and all meals. Choose a bunk room, twin share
+  or a room of your own. Summer dates cost 12% more.
+category: Retreats
+keywords: [retreat, yoga retreat, wellness retreat, group, offsite, lodge]
+date: required # arrival date
+minNoticeHours: 720 # 30 days
+
+# Flat host fee: facilitation and set-up, whatever the group size.
+price: 900
+
+ask:
+  guests:
+    type: integer
+    label: How many guests?
+    min: 1
+    max: 200
+    role: quantity
+  nights:
+    type: integer
+    label: How many nights?
+    min: 1
+    max: 30
+    role: quantity
+
+choose:
+  room_type:
+    label: Rooms
+    required: true
+    # Per guest per night: a two-quantity price, so each option uses a
+    # formula instead of `price: { amount, per }`.
+    options:
+      bunk_room:
+        label: Bunk room
+        pricing: [ { label: Bunk room, kind: addon, formula: guests * nights * 60 } ]
+      twin_share:
+        label: Twin share
+        pricing: [ { label: Twin share, kind: addon, formula: guests * nights * 95 } ]
+      own_room:
+        label: Room of your own
+        pricing: [ { label: Room of your own, kind: addon, formula: guests * nights * 160 } ]
+  transfers:
+    label: Transfers
+    options:
+      airport_shuttle:
+        label: Return airport shuttle
+        pricing:
+          # kind: fee runs at order 400, after the peak surcharge, so the
+          # pass-through shuttle is not marked up.
+          - { label: Airport shuttle, kind: fee, amount: 40, per: guests, taxable: false }
+
+rules:
+  - id: min_group
+    when: { not: { guests: { gte: 8 } } }
+    block: Private retreats are for groups of 8 or more
+  - id: max_group
+    when: { not: { guests: { lte: 24 } } }
+    block: The lodge sleeps 24
+  - id: min_nights
+    when: { not: { nights: { gte: 2 } } }
+    block: Retreats are at least 2 nights
+  - id: max_nights
+    when: { not: { nights: { lte: 6 } } }
+    block: Retreats run up to 6 nights
+
+pricing:
+  - id: program
+    label: Programme and meals
+    kind: addon
+    formula: guests * nights * 140
+    reason: Classes, workshops and all meals, per guest per night
+  # basis: running at the surcharge default (order 300) = 12% of the host
+  # fee, programme and rooms.
+  - id: peak_season
+    label: Peak season
+    kind: surcharge
+    percent: 12
+    basis: running
+    when: { isPeak: true }
+    reason: Summer retreat season

@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Copywriting: $150 brief + per-word volume tiers (0.50 / 0.40 / 0.32),
+# 25% technical premium, $400 minimum order topped up.
+defaults:
+  now: '2026-03-02T17:00:00Z'
+scenarios:
+  - name: 1,500 words of web copy
+    offering: copywriting-per-word
+    answers: { word_count: 1500, content_type: web_pages }
+    expect:
+      status: qualified
+      total: 900 # 150 + 1500 x 0.50
+
+  - name: 6,000 technical words with SEO research
+    offering: copywriting-per-word
+    answers: { word_count: 6000, content_type: technical }
+    selections: { extras: [seo_research] }
+    expect:
+      status: qualified
+      total: 2837.5 # (150 + 6000 x 0.32) x 1.25 + 250
+      lines:
+        - { label: Technical subject premium, amount: 517.5 }
+
+  - name: a short blog post is topped up to the minimum
+    offering: copywriting-per-word
+    answers: { word_count: 300, content_type: blog_articles }
+    expect:
+      status: qualified
+      total: 400 # 150 + 150, topped up by 100
+
+  - name: at 2,000 words every word drops to the next rate
+    offering: copywriting-per-word
+    answers: { word_count: 2000, content_type: blog_articles }
+    expect:
+      status: qualified
+      total: 950 # 150 + 2000 x 0.40 (1,999 words would be 1,149.50)
+
+  - name: over 20,000 words is a content programme
+    offering: copywriting-per-word
+    answers: { word_count: 25000 }
+    expect:
+      status: blocked
+      rule: max_words

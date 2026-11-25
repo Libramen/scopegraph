@@ -1,0 +1,56 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# The private session: $160 flat for one or two surfers, 9% tax, no date
+# surcharges. Every scenario gets a 3 ft tide unless it sets its own.
+defaults:
+  now: '2026-02-02T17:00:00Z'
+  facts: { tide_ft: 3 }
+scenarios:
+  - name: the head count is asked first
+    offering: private-lesson
+    date: '2026-02-05'
+    expect:
+      status: needs_input
+      asks: surfers
+
+  - name: then the cold-water question
+    offering: private-lesson
+    date: '2026-02-05'
+    answers: { surfers: 1 }
+    expect:
+      status: needs_input
+      asks: cold_water_ok
+
+  - name: two surfers pay the same flat price
+    offering: private-lesson
+    date: '2026-02-05'
+    answers: { surfers: 2, cold_water_ok: true }
+    expect:
+      status: qualified
+      total: 174.4 # 160; tax 14.40
+      tax: 14.4
+
+  - name: a Saturday costs the same (the weekend surcharge is the group lesson's)
+    offering: private-lesson
+    date: '2026-02-07'
+    answers: { surfers: 1, cold_water_ok: true }
+    expect:
+      status: qualified
+      total: 174.4 # 160; tax 14.40
+      subtotal: 160
+
+  - name: a group of three is pointed to the group lesson (up_to_two)
+    offering: private-lesson
+    date: '2026-02-05'
+    answers: { surfers: 3 }
+    expect:
+      status: blocked
+      rule: private-lesson.up_to_two
+
+  - name: the tide rule applies here too
+    offering: private-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 5.8 }
+    answers: { surfers: 1, cold_water_ok: true }
+    expect:
+      status: blocked
+      rule: private-lesson.tide_window

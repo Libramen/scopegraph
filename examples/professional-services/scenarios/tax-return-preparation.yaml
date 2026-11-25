@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Tax return: $325 base (federal + one state), schedules on top, $95 per
+# extra state, 30% rush inside 10 days of the filing date, 72 hours minimum.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: a simple return a month before it is due
+    offering: tax-return-preparation
+    date: '2026-04-01'
+    answers: { foreign_income: false, states_filed: 1 }
+    expect:
+      status: qualified
+      total: 325
+
+  - name: Schedule E asks how many rentals
+    offering: tax-return-preparation
+    date: '2026-04-01'
+    answers: { foreign_income: false, states_filed: 1 }
+    selections: { schedules: [schedule_e] }
+    expect:
+      status: needs_input
+      asks: rental_properties
+
+  - name: itemized, self-employed, two rentals and two states
+    offering: tax-return-preparation
+    date: '2026-04-01'
+    answers: { foreign_income: false, states_filed: 2, rental_properties: 2 }
+    selections: { schedules: [schedule_a, schedule_c, schedule_e] }
+    expect:
+      status: qualified
+      total: 1195 # 325 + 125 + 250 + 2 x 200 + 95
+      lines:
+        - { label: Additional state returns, amount: 95 }
+
+  - name: the same return due in 6 days pays the rush
+    offering: tax-return-preparation
+    date: '2026-03-09'
+    answers: { foreign_income: false, states_filed: 2, rental_properties: 2 }
+    selections: { schedules: [schedule_a, schedule_c, schedule_e] }
+    expect:
+      status: qualified
+      total: 1553.5 # 1195 + 30%
+      lines:
+        - { label: Deadline rush, amount: 358.5 }
+
+  - name: foreign income is quoted separately
+    offering: tax-return-preparation
+    date: '2026-04-01'
+    answers: { foreign_income: true }
+    expect:
+      status: blocked
+      rule: no_foreign_returns
+
+  - name: more than four rentals is refused
+    offering: tax-return-preparation
+    date: '2026-04-01'
+    answers: { foreign_income: false, states_filed: 1, rental_properties: 6 }
+    selections: { schedules: [schedule_e] }
+    expect:
+      status: blocked
+      rule: max_rentals
+
+  - name: a return due tomorrow is too soon
+    offering: tax-return-preparation
+    date: '2026-03-03'
+    answers: { foreign_income: false, states_filed: 1 }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

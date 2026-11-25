@@ -1,0 +1,52 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: fractional executives, advisors and agencies selling a monthly
+# block of hours. Copy to catalog/offerings/, then change the hour tiers,
+# the commitment discount and the priority-response rule.
+kind: product
+name: Monthly Advisory Retainer
+description: >
+  A monthly block of advisory hours with a named senior advisor: calls,
+  document reviews and async questions. The quote is one month's fee.
+category: Consulting
+keywords: [retainer, advisory, fractional, monthly, hours]
+
+# The smallest tier is the base; bigger tiers are priced as the difference.
+price: 1200
+
+ask:
+  commitment:
+    type: select
+    label: Month to month, or a 12-month commitment?
+    options:
+      - { value: month_to_month, label: Month to month }
+      - { value: twelve_months, label: 12-month commitment (10% off) }
+
+choose:
+  hours:
+    label: Hours per month
+    required: true
+    options:
+      hours_4: { label: 4 hours a month }
+      hours_8: { label: 8 hours a month, price: 1000 }
+      hours_16: { label: 16 hours a month, price: 2800 }
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      priority_response:
+        label: Same-business-day response
+        price: 500
+
+rules:
+  - id: priority_needs_8_hours
+    when: { selected: hours.hours_4 }
+    exclude: extras.priority_response
+    message: Same-day response comes with 8 or 16 hours a month.
+
+pricing:
+  - id: commitment_discount
+    label: 12-month commitment discount
+    kind: discount
+    percent: 10
+    when: { commitment: twelve_months }
+    reason: 10% off every month for a 12-month commitment

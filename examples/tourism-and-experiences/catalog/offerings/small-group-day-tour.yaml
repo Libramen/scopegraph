@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: scheduled day tours sold by the seat (coach, van or walking).
+# Copy to catalog/offerings/, then change the seat prices, the park fee, the
+# minimum child age and the seats per departure. Also inside three-night-adventure-
+# trip: keep adults/children/youngest_child_age identical to the zipline's.
+kind: product
+name: Small-Group Day Tour
+description: >
+  A guided full-day van tour to the national park, with up to 14 travellers
+  per departure. Adult and child seats; children must be 6 or older. Park
+  entry is passed through at cost.
+category: Tours
+keywords: [day tour, small group, national park, van tour, sightseeing]
+date: required
+minNoticeHours: 24
+
+# Price per adult seat; child seats are a separate line below.
+price:
+  amount: 139
+  per: adults
+
+ask:
+  adults:
+    type: integer
+    label: How many adults (12 and over)?
+    min: 1
+    max: 30
+    role: quantity
+  children:
+    type: integer
+    label: How many children under 12?
+    min: 0
+    max: 20
+    role: quantity
+  youngest_child_age:
+    # Optional: only asked when the min-age rule needs it, i.e. when
+    # children were booked.
+    type: integer
+    label: How old is the youngest child?
+    required: false
+    min: 0
+    max: 11
+
+rules:
+  - id: min_child_age
+    when: { all: [ { children: { gte: 1 } }, { not: { youngest_child_age: { gte: 6 } } } ] }
+    block: Children must be at least 6 for the full-day park tour
+  - id: max_seats
+    when: { not: { adults: { lte: 14 } } }
+    block: >
+      A departure seats 14. For larger groups, book a private tour or split
+      across two dates.
+
+pricing:
+  - id: child_seats
+    label: Child seats (under 12)
+    kind: addon
+    amount: 89
+    per: children
+  - id: park_entry
+    label: National park entry (adults)
+    kind: fee
+    amount: 25
+    per: adults
+    taxable: false
+    reason: Park entry passed through at cost; children enter free

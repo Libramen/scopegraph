@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Bookkeeping: $350 base for up to 100 transactions, flat band steps above
+# that, $175 per catch-up month. Over 600 transactions or 12 months behind
+# is a custom job.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: a small business that is up to date
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 80, accounting_software: xero, months_behind: 0 }
+    expect:
+      status: qualified
+      total: 350
+
+  - name: 250 transactions, three months behind, with payroll
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 250, accounting_software: quickbooks_online, months_behind: 3 }
+    selections: { extras: [payroll] }
+    expect:
+      status: qualified
+      total: 1195 # 350 + 200 band + 525 catch-up + 120 payroll
+      lines:
+        - { label: Volume band 101–300 transactions, amount: 200 }
+        - { label: Catch-up months (one-off), amount: 525 }
+
+  - name: the band edge at 300 stays in the middle band
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 300, accounting_software: xero, months_behind: 0 }
+    expect:
+      status: qualified
+      total: 550
+
+  - name: 450 transactions land in the top band
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 450, accounting_software: xero, months_behind: 0 }
+    expect:
+      status: qualified
+      total: 800
+
+  - name: over 600 transactions needs a custom plan
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 900 }
+    expect:
+      status: blocked
+      rule: max_volume
+
+  - name: unsupported software is refused
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 120, accounting_software: other }
+    expect:
+      status: blocked
+      rule: supported_software
+
+  - name: 18 months behind is a clean-up project
+    offering: bookkeeping-monthly
+    answers: { monthly_transactions: 120, accounting_software: xero, months_behind: 18 }
+    expect:
+      status: blocked
+      rule: max_catch_up

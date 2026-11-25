@@ -1,0 +1,21 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the professional-services examples. Copy the parts you
+# need into your own catalog/business.yaml: timezone, and the handoff that
+# tells a buyer with a qualified quote what happens next.
+#
+# No taxRate: professional services are untaxed in most US states. If yours
+# are taxed, add `taxRate:` here; pass-through lines (travel, government
+# filing fees) are already marked `taxable: false`.
+name: Example — Consulting & professional services
+description: >
+  Productized consulting, bookkeeping, legal and tax services: discovery
+  sprints, day rates, retainers, monthly books, fixed-fee legal documents
+  and tax returns.
+currency: USD
+timezone: America/New_York
+
+# Only qualified quotes carry this hand-off; blocked quotes show the rule's
+# own message instead.
+handoff:
+  url: https://book.example/start?offering={offering}&{params}
+  message: Book a 20-minute call to confirm scope and sign the engagement letter.

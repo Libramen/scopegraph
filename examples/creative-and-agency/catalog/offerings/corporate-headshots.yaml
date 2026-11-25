@@ -1,0 +1,66 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: photographers selling team headshots at the studio or on site.
+# Copy to catalog/offerings/, then change the per-person rate, the on-site
+# setup fee and minimum, and the travel radius.
+kind: product
+name: Corporate Headshots
+description: >
+  Professional headshots for teams, at our studio or on site at your office
+  with a portable studio. Price per person, three retouched images each.
+category: Photography
+keywords: [headshots, corporate, team photos, photography, on-site]
+
+price:
+  amount: 95
+  per: people
+
+ask:
+  people:
+    type: integer
+    label: How many people?
+    min: 1
+    max: 500
+    role: quantity
+  location:
+    type: select
+    label: At our studio or at your office?
+    options: [our_studio, your_office]
+  distance_miles:
+    # Required, but gated: only asked for on-site sessions.
+    type: integer
+    label: How many miles is your office from downtown?
+    min: 0
+    max: 1000
+
+choose:
+  retouching:
+    label: Retouching
+    options:
+      detailed:
+        label: Detailed retouching (skin, flyaways, background)
+        price: { amount: 35, per: people }
+
+rules:
+  - id: ask_distance
+    when: { location: your_office }
+    ask: distance_miles
+  - id: onsite_minimum
+    when: { all: [ { location: your_office }, { people: { lt: 5 } } ] }
+    block: On-site sessions are for 5 people or more; smaller groups come to the studio.
+  - id: travel_radius
+    when: { all: [ { location: your_office }, { distance_miles: { gt: 60 } } ] }
+    block: We travel up to 60 miles; further afield is quoted separately.
+
+pricing:
+  - id: onsite_setup
+    label: On-site studio setup
+    kind: addon
+    amount: 450
+    when: { location: your_office }
+  - id: mileage
+    label: Mileage (round trip)
+    kind: fee
+    amount: 2
+    per: distance_miles
+    taxable: false # pass-through
+    when: { location: your_office }

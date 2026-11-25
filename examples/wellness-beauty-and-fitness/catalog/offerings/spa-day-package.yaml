@@ -1,0 +1,62 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: day spas, hotel spas and bathhouses selling a fixed-price day.
+# Copy this file AND the products it contains (therapeutic-massage,
+# spa-express-facial) to catalog/offerings/, then change the per-person
+# price, the upgrades, the weekend premium and the minimum age.
+kind: package
+name: Spa Day
+description: >
+  A day for one or two: 60-minute massage, express facial, thermal suite
+  and lunch, at one price per person. Guests must be 16 or older; weekends
+  cost 10% more.
+category: Packages
+keywords: [spa day, day spa, massage, facial, thermal suite, gift]
+date: required
+minNoticeHours: 24
+
+# A fixed package price replaces the contents' prices. The massage's
+# questions (people, pregnancy), its trimester rule and its couples suite
+# fee still flow in.
+price:
+  amount: 260
+  per: people
+
+contains:
+  - therapeutic-massage
+  - spa-express-facial
+
+ask:
+  youngest_guest_age:
+    type: integer
+    label: How old is the youngest guest?
+    min: 0
+    max: 120
+
+# Option groups do not flow in from the massage; the package owns its own.
+choose:
+  massage_length:
+    label: Massage length
+    required: true
+    options:
+      sixty_minutes: { label: 60 minutes (included) }
+      ninety_minutes: { label: Upgrade to 90 minutes, price: { amount: 45, per: people } }
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      champagne: { label: Glass of champagne with lunch, price: { amount: 16, per: people } }
+      manicure: { label: Manicure, price: { amount: 40, per: people } }
+
+rules:
+  - id: thermal_suite_age
+    when: { not: { youngest_guest_age: { gte: 16 } } }
+    block: The thermal suite is for guests 16 and over
+
+pricing:
+  - id: weekend
+    label: Weekend premium
+    kind: surcharge
+    percent: 10
+    basis: base # 10% of the day price only, not the extras
+    when: { isWeekend: true }
+    reason: Saturday and Sunday spa days

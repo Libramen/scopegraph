@@ -1,0 +1,73 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: law firms and filing services selling a fixed-fee legal document
+# (LLC formation here; a will or trademark filing has the same shape). Copy
+# to catalog/offerings/, then change the fee, the states you're admitted in
+# and their filing fees, and the rush window.
+kind: product
+name: LLC Formation
+description: >
+  Attorney-prepared LLC formation: name check, articles of organization,
+  operating agreement and filing with the state. Fixed legal fee; state
+  filing fees passed through at cost.
+category: Legal
+keywords: [llc, formation, business, legal, attorney, fixed fee]
+date: required # the date the filing is needed by
+minNoticeHours: 48
+
+price: 750
+
+ask:
+  formation_state:
+    type: select
+    label: Which state should the LLC be formed in?
+    options:
+      - { value: delaware, label: Delaware }
+      - { value: wyoming, label: Wyoming }
+      - { value: texas, label: Texas }
+      - { value: florida, label: Florida }
+      - { value: new_york, label: New York }
+      - { value: other_state, label: Another state }
+  members:
+    type: select
+    label: One owner or several?
+    options: [single_member, multi_member]
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      ein_application: { label: EIN application, price: 75 }
+      registered_agent: { label: 'Registered agent, first year', price: 125 }
+
+rules:
+  - id: admitted_states
+    when: { not: { formation_state: [delaware, wyoming, texas, florida, new_york] } }
+    block: We form LLCs in Delaware, Wyoming, Texas, Florida and New York only.
+
+pricing:
+  - id: multi_member_agreement
+    label: Multi-member operating agreement
+    kind: addon
+    amount: 500
+    when: { members: multi_member }
+  - id: rush
+    label: Rush filing
+    kind: surcharge
+    amount: 300
+    when: { leadTimeDays: { lt: 7 } }
+    reason: Needed within 7 days
+  # Government fees: pass-through, never taxable. Illustrative amounts;
+  # check your state's current fee schedule.
+  - { id: fee_delaware, label: Delaware filing fee, kind: fee, amount: 110, taxable: false, when: { formation_state: delaware } }
+  - { id: fee_wyoming, label: Wyoming filing fee, kind: fee, amount: 100, taxable: false, when: { formation_state: wyoming } }
+  - { id: fee_texas, label: Texas filing fee, kind: fee, amount: 300, taxable: false, when: { formation_state: texas } }
+  - { id: fee_florida, label: Florida filing fee, kind: fee, amount: 125, taxable: false, when: { formation_state: florida } }
+  - { id: fee_new_york, label: New York filing fee, kind: fee, amount: 200, taxable: false, when: { formation_state: new_york } }
+  - id: ny_publication
+    label: New York publication requirement
+    kind: fee
+    amount: 1000
+    taxable: false
+    when: { formation_state: new_york }
+    reason: New York requires a published notice of formation; cost varies by county

@@ -1,0 +1,43 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Video: $1,200 pre-production + crew rate x shoot days + $950 x edit days.
+defaults:
+  now: '2026-03-02T17:00:00Z'
+scenarios:
+  - name: crew size is asked once the days are known
+    offering: video-production
+    answers: { shoot_days: 1, edit_days: 2 }
+    expect:
+      status: needs_input
+      asks: crew
+
+  - name: one day with a small crew and two edit days
+    offering: video-production
+    answers: { shoot_days: 1, edit_days: 2 }
+    selections: { crew: small_crew }
+    expect:
+      status: qualified
+      total: 6700 # 1200 + 3600 + 2 x 950
+
+  - name: two full-crew days with drone and four edit days
+    offering: video-production
+    answers: { shoot_days: 2, edit_days: 4 }
+    selections: { crew: full_crew, extras: [drone] }
+    expect:
+      status: qualified
+      total: 18850 # 1200 + 2 x 6500 + 850 + 4 x 950
+
+  - name: a solo shooter cannot add the drone
+    offering: video-production
+    answers: { shoot_days: 1, edit_days: 1 }
+    selections: { crew: solo, extras: [drone] }
+    expect:
+      status: blocked
+      rule: drone_needs_crew
+
+  - name: a one-day full crew is refused
+    offering: video-production
+    answers: { shoot_days: 1, edit_days: 2 }
+    selections: { crew: full_crew }
+    expect:
+      status: blocked
+      rule: full_crew_minimum

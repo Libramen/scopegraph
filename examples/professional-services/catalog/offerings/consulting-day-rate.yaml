@@ -1,0 +1,68 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: independent consultants, interim managers and trainers who bill
+# by the day. Copy to catalog/offerings/, then change the day rate, the
+# maximum days per booking and the travel amounts.
+kind: product
+name: Consulting Day Rate
+description: >
+  A senior consultant by the day, remote or on site, for workshops, reviews
+  or hands-on delivery. Up to 15 days per booking; travel is passed through
+  at cost.
+category: Consulting
+keywords: [consulting, day rate, advisor, on-site, workshop]
+
+price:
+  amount: 1800
+  per: days
+
+ask:
+  days:
+    type: integer
+    label: How many days?
+    min: 1
+    max: 250
+    role: quantity
+  delivery:
+    type: select
+    label: Remote or on site?
+    options: [remote, on_site]
+  travel_zone:
+    # Required, but gated: only asked for on-site work (rule below).
+    type: select
+    label: Where is the site?
+    options:
+      - { value: local, label: Within 50 miles of our office }
+      - { value: domestic, label: Elsewhere in the US }
+      - { value: international, label: Outside the US }
+
+rules:
+  - id: ask_travel_zone
+    when: { delivery: on_site }
+    ask: travel_zone
+  - id: max_days
+    when: { days: { gt: 15 } }
+    block: >
+      More than 15 days is a retainer or a project. Email
+      hello@consulting.example for a proposal.
+  - id: no_international
+    when: { delivery: on_site, travel_zone: international }
+    block: International on-site work is quoted separately; remote days are available.
+
+pricing:
+  # Pass-through costs: `taxable: false` keeps them out of the tax base if
+  # you add a taxRate. Conditions name `delivery` too, so remote work
+  # decides them without asking for a travel zone.
+  - id: travel
+    label: Travel (flights and ground)
+    kind: fee
+    amount: 900
+    taxable: false
+    when: { delivery: on_site, travel_zone: domestic }
+    reason: One return trip, billed at cost up to this amount
+  - id: per_diem
+    label: Per diem (hotel and meals)
+    kind: fee
+    amount: 95
+    per: days
+    taxable: false
+    when: { delivery: on_site, travel_zone: domestic }

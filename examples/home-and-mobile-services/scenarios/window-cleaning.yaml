@@ -1,0 +1,63 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $40 trip charge + per-window tiers ($8 up to 15, $7 for 16-30, $6 for 31+,
+# every window at one rate); interior +$4/window; 3rd storey +$40; $120 minimum.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: with the job described, the sides choice is asked
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 20, storeys: 2 }
+    expect:
+      status: needs_input
+      asks: sides
+
+  - name: 20 windows outside only, two storeys
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 20, storeys: 2 }
+    selections: { sides: exterior_only }
+    expect:
+      status: qualified
+      total: 180 # 40 + 20 x 7
+      lines:
+        - { label: Windows, amount: 140 }
+
+  - name: 40 windows inside and out with screens, three storeys
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 40, storeys: 3 }
+    selections: { sides: inside_and_out, extras: [screens] }
+    expect:
+      status: qualified
+      total: 560 # 40 + 40 x 6 + 40 x 4 interior + 40 x 2 screens + 40 third storey
+      lines:
+        - { label: Windows, amount: 240 }
+        - { label: Third-storey ladder work, amount: 40 }
+
+  - name: a small job is topped up to the $120 minimum
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 8, storeys: 1 }
+    selections: { sides: exterior_only }
+    expect:
+      status: qualified
+      total: 120 # 40 + 8 x 8 = 104, topped up by 16
+      lines:
+        - { label: Minimum spend, amount: 16 }
+
+  - name: four storeys is refused
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 30, storeys: 4 }
+    expect:
+      status: blocked
+      rule: max_storeys
+
+  - name: zero windows is invalid input, not a refusal
+    offering: window-cleaning
+    date: '2026-03-05'
+    answers: { windows: 0, storeys: 1 }
+    expect:
+      status: invalid
+      error: answers.windows

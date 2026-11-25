@@ -1,0 +1,80 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: overnight dog boarding priced per night, with a cheaper rate for
+# extra dogs sharing a suite and a holiday rate. Copy to catalog/offerings/,
+# then change the nightly rates, the holiday rate (and the seasons in
+# business.yaml), the vaccines you require and the add-ons.
+kind: product
+name: Dog boarding
+description: >
+  Overnight boarding in a private suite, priced per night. Dogs from the
+  same home can share a suite at a lower rate. Rabies, DHPP and Bordetella
+  must be current. Holiday nights cost more.
+category: Boarding
+keywords: [dog boarding, kennel, overnight, pet hotel]
+date: required # check-in date
+minNoticeHours: 24
+
+# The first dog. Extra dogs and the holiday rate are formulas below, so
+# every charge is per dog per night.
+price:
+  amount: 55
+  per: nights
+
+ask:
+  nights:
+    type: integer
+    label: How many nights?
+    min: 1
+    max: 28
+    role: quantity
+  dogs:
+    type: integer
+    label: How many dogs from your home?
+    min: 1
+    max: 10
+  vaccinations_current:
+    type: boolean
+    label: Are all dogs up to date on rabies, DHPP and Bordetella?
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    required: false
+    options:
+      bath_at_checkout:
+        label: Bath before pickup
+        price: { amount: 25, per: dogs }
+      daily_play_group:
+        label: Daily play group session
+        pricing:
+          - { label: Daily play group, kind: addon, formula: dogs * nights * 12 }
+
+rules:
+  - id: vaccinations_required
+    when: { not: { vaccinations_current: true } }
+    block: >
+      All dogs need current rabies, DHPP and Bordetella vaccinations. Bring
+      the records to check-in once they are up to date.
+  - id: max_dogs
+    when: { not: { dogs: { lte: 3 } } }
+    block: A suite holds at most 3 dogs from the same home.
+
+pricing:
+  # The multi-dog discount is a lower rate for extra dogs, not a % off:
+  # a % of the running total would also discount the extras, and a % of
+  # the base would only see the first dog.
+  - id: additional_dogs
+    label: Additional dogs (shared suite)
+    kind: addon
+    formula: (dogs - 1) * nights * 40
+    when: { dogs: { gte: 2 } }
+    reason: Each extra dog sharing a suite is $40 a night instead of $55
+  # Judged on the check-in date only: a stay that starts before the
+  # holiday window pays the normal rate for every night.
+  - id: holiday_rate
+    label: Holiday rate
+    kind: surcharge
+    formula: dogs * nights * 15
+    when: { isPeak: true }
+    reason: $15 per dog per night for holiday check-ins

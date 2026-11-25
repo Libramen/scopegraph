@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# LLC formation: $750 legal fee, state filing fees passed through untaxed,
+# $300 rush inside 7 days, under 48 hours refused. The date is the date
+# the filing is needed by.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: the needed-by date is asked first
+    offering: llc-formation
+    expect:
+      status: needs_input
+      asks: date
+
+  - name: single-member Delaware LLC a month out
+    offering: llc-formation
+    date: '2026-04-01'
+    answers: { formation_state: delaware, members: single_member }
+    expect:
+      status: qualified
+      total: 860 # 750 + 110 filing fee
+
+  - name: multi-member New York LLC needed in 4 days
+    offering: llc-formation
+    date: '2026-03-06'
+    answers: { formation_state: new_york, members: multi_member }
+    selections: { extras: [ein_application] }
+    expect:
+      status: qualified
+      total: 2825 # 750 + 500 agreement + 75 EIN + 300 rush + 200 filing + 1000 publication
+      lines:
+        - { label: Rush filing, amount: 300 }
+        - { label: New York publication requirement, amount: 1000 }
+
+  - name: a state the firm is not admitted in is refused
+    offering: llc-formation
+    date: '2026-04-01'
+    answers: { formation_state: other_state }
+    expect:
+      status: blocked
+      rule: admitted_states
+
+  - name: less than 48 hours is too soon
+    offering: llc-formation
+    date: '2026-03-03'
+    answers: { formation_state: texas, members: single_member }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# The business itself: one currency, one tax rate and one timezone for every
+# offering in this catalog.
+#
+# Sea Stack Surf School is the starter. Fork it and turn it into your own
+# business. Notes for yourself go in YAML comments like this one, because
+# `description` below is shown to buyers.
+name: Sea Stack Surf School
+description: >
+  Surf school on Linda Mar beach in Pacifica, California. Group lessons priced
+  per surfer, private sessions for one or two, and a two-day weekend package.
+website: https://seastacksurf.example
+currency: USD
+timezone: America/Los_Angeles
+
+# Percent (0-100), charged on every taxable quote line.
+taxRate: 9
+
+# Facts come from your server on every request (src/extend/facts.ts), never
+# from the buyer: nobody gets to tell us what the tide is doing. Because this
+# one is `required`, a request the server can't supply it for is blocked with
+# FACTS_UNAVAILABLE instead of being quoted on a guess.
+facts:
+  tide_ft:
+    type: number
+    description: >
+      Tide height in feet at Linda Mar for the lesson slot, read from the
+      server's tide feed.
+    required: true
+
+# Named date ranges. A `peak` range makes `isPeak` true on its days, and
+# `season` takes the range's name. MM-DD repeats every year; YYYY-MM-DD
+# fixes a single year.
+seasons:
+  - name: summer_break
+    kind: peak
+    from: '06-20'
+    to: '08-31'
+    description: School summer holidays
+
+# Where a qualified buyer goes next. `{offering}` and `{params}` are filled in
+# (docs/catalog-format.md lists every placeholder). Send what the booking form
+# needs to pre-fill, never the price: anyone can edit a URL, so the booking
+# page prices the request again on the server (or takes payment through the
+# payments module).
+handoff:
+  url: https://book.seastacksurf.example/new?offering={offering}&{params}
+  message: Choose a session time on the Sea Stack booking page.

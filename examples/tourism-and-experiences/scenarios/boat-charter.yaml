@@ -1,0 +1,51 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Boat charter: $225/hour with captain, 10% fuel and 20% peak on the hire
+# line only. Sales tax 7%. 2026-04-14 is off-peak; 2026-07-18 is summer peak.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: four hours for six, off-peak
+    offering: boat-charter
+    date: '2026-04-14'
+    answers: { hours: 4, passengers: 6 }
+    expect:
+      status: qualified
+      total: 1059.3 # 900 + 90 fuel; tax 69.30
+      lines:
+        - { label: Fuel surcharge, amount: 90 }
+
+  - name: ten passengers in peak season with a deckhand and platters
+    offering: boat-charter
+    date: '2026-07-18'
+    answers: { hours: 4, passengers: 10 }
+    selections: { crew: deckhand, extras: [catered_platters] }
+    expect:
+      status: qualified
+      subtotal: 1570 # 900 + 180 deckhand + 220 platters + 90 fuel + 180 peak
+      total: 1679.9
+      lines:
+        - { label: Peak season, amount: 180 }
+
+  - name: ten passengers - the deckhand is asked for
+    offering: boat-charter
+    date: '2026-04-14'
+    answers: { hours: 4, passengers: 10 }
+    expect:
+      status: needs_input
+      asks: crew
+
+  - name: two hours is under the minimum
+    offering: boat-charter
+    date: '2026-04-14'
+    answers: { hours: 2, passengers: 4 }
+    expect:
+      status: blocked
+      rule: min_hours
+
+  - name: fourteen passengers are over the limit
+    offering: boat-charter
+    date: '2026-04-14'
+    answers: { hours: 4, passengers: 14 }
+    expect:
+      status: blocked
+      rule: passenger_limit

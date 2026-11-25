@@ -1,0 +1,46 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Fitness coaching: $90 per session, pack savings of $8 / $13 / $18 per
+# session for 5 / 10 / 20, partner and home-visit add-ons per session.
+# No sales tax.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: pack of 10, one-to-one at the studio
+    offering: coaching-session-pack
+    answers: { sessions: 10, cleared_for_exercise: true }
+    selections: { format: one_to_one, location: studio }
+    expect:
+      status: qualified
+      total: 770 # 900 - 130
+      lines:
+        - { label: Pack saving, amount: -130 }
+
+  - name: a single session at home
+    offering: coaching-session-pack
+    answers: { sessions: 1, cleared_for_exercise: true }
+    selections: { format: one_to_one, location: home_visit }
+    expect:
+      status: qualified
+      total: 115 # 90 + 25 travel
+
+  - name: pack of 20 partner sessions at home
+    offering: coaching-session-pack
+    answers: { sessions: 20, cleared_for_exercise: true }
+    selections: { format: partner, location: home_visit }
+    expect:
+      status: qualified
+      total: 2540 # 1800 + 600 partner + 500 travel - 360
+
+  - name: seven sessions is not a pack we sell
+    offering: coaching-session-pack
+    answers: { sessions: 7 }
+    expect:
+      status: blocked
+      rule: pack_sizes
+
+  - name: not cleared for exercise, no training yet
+    offering: coaching-session-pack
+    answers: { sessions: 5, cleared_for_exercise: false }
+    expect:
+      status: blocked
+      rule: cleared_to_train

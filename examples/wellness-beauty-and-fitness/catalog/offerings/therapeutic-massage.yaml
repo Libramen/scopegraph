@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: massage therapists and day spas selling single or couples
+# treatments. Copy to catalog/offerings/, then change the per-person price,
+# the durations, the enhancements and the couples suite fee.
+# spa-day-package contains this product: if you copy both, keep them together.
+kind: product
+name: Therapeutic Massage
+description: >
+  A 60, 90 or 120-minute massage for one person, or a couples massage side
+  by side in the couples suite. Enhancements available. No massage in the
+  first trimester of pregnancy.
+category: Treatments
+keywords: [massage, couples massage, deep tissue, relaxation, spa]
+date: required
+minNoticeHours: 4
+
+# Per person, so a couples booking is simply people: 2.
+price:
+  amount: 115
+  per: people
+
+ask:
+  people:
+    type: integer
+    label: Booking for one person, or two (couples massage)?
+    min: 1
+    max: 2
+    role: quantity
+  pregnant:
+    type: boolean
+    label: Is anyone receiving a massage pregnant?
+  weeks_pregnant:
+    # Optional: only asked when the trimester rule needs it.
+    type: integer
+    label: How many weeks pregnant?
+    required: false
+    min: 0
+    max: 45
+
+# This product goes inside spa-day-package, so it must not carry rules
+# about its own groups (the compiler would reject the package).
+choose:
+  duration:
+    label: Duration
+    required: true
+    options:
+      sixty_minutes: { label: 60 minutes }
+      ninety_minutes: { label: 90 minutes, price: { amount: 55, per: people } }
+      two_hours: { label: 120 minutes, price: { amount: 105, per: people } }
+  enhancements:
+    label: Enhancements
+    mode: multi
+    options:
+      basalt_stones: { label: Warm basalt stones, price: { amount: 25, per: people } }
+      aromatherapy: { label: Aromatherapy, price: { amount: 15, per: people } }
+      cbd_balm: { label: CBD balm, price: { amount: 20, per: people } }
+
+rules:
+  - id: first_trimester
+    when: { all: [ { pregnant: true }, { not: { weeks_pregnant: { gte: 13 } } } ] }
+    block: We offer prenatal massage from 13 weeks; please book after your first trimester
+
+pricing:
+  - id: couples_suite
+    label: Couples suite
+    kind: addon
+    amount: 30
+    when: { people: 2 }
+    reason: Two therapists in the couples suite

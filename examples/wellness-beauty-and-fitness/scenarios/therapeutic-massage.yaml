@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Massage: $115 per person for 60 minutes, longer sessions and enhancements
+# per person, $30 couples suite. No sales tax. 2026-03-10 is a Tuesday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: one person, 60 minutes
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 1, pregnant: false }
+    selections: { duration: sixty_minutes }
+    expect:
+      status: qualified
+      total: 115
+
+  - name: couples, 90 minutes with basalt stones
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 2, pregnant: false }
+    selections: { duration: ninety_minutes, enhancements: [basalt_stones] }
+    expect:
+      status: qualified
+      total: 420 # 230 + 110 + 50 + 30 couples suite
+      lines:
+        - { label: Couples suite, amount: 30 }
+
+  - name: pregnant - the weeks are asked
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 1, pregnant: true }
+    expect:
+      status: needs_input
+      asks: weeks_pregnant
+
+  - name: first trimester is refused
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 1, pregnant: true, weeks_pregnant: 10 }
+    expect:
+      status: blocked
+      rule: first_trimester
+
+  - name: twenty weeks pregnant qualifies
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 1, pregnant: true, weeks_pregnant: 20 }
+    selections: { duration: sixty_minutes }
+    expect:
+      status: qualified
+      total: 115
+
+  - name: three people is not a valid booking
+    offering: therapeutic-massage
+    date: '2026-03-10'
+    answers: { people: 3, pregnant: false }
+    expect:
+      status: invalid
+      error: answers.people

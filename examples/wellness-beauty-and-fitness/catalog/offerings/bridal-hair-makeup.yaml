@@ -1,0 +1,79 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: mobile hair and makeup artists for weddings and events. Copy to
+# catalog/offerings/, then change the bridal price, the per-person services,
+# the minimum party size, the travel zones and fees, and the early-call fee.
+kind: product
+name: Wedding Hair & Makeup (Mobile)
+description: >
+  On-location hair and makeup for the bride and wedding party. Minimum
+  three people (bride plus two). We travel up to 80 miles; trials and an
+  early-call option available.
+category: Beauty
+keywords: [wedding hair, bridal makeup, mobile makeup artist, bridal party, hair stylist]
+date: required # the wedding date
+minNoticeHours: 336 # 14 days
+
+# The bride's hair and makeup; everyone else is priced per person below.
+price: 295
+
+ask:
+  party_size:
+    type: integer
+    label: How many people besides the bride need hair and/or makeup?
+    min: 0
+    max: 50
+    role: quantity
+  travel_zone:
+    type: select
+    label: How far is the venue from our studio?
+    options:
+      - { value: within_20_miles, label: Within 20 miles }
+      - { value: miles_20_to_50, label: 20 to 50 miles }
+      - { value: miles_50_to_80, label: 50 to 80 miles }
+      - { value: over_80_miles, label: Over 80 miles }
+  ready_before_7am:
+    # Optional fact: asked only because the early-call fee depends on it.
+    type: boolean
+    label: Does anyone need to be ready before 7am?
+    required: false
+    role: fact
+
+choose:
+  party_service:
+    label: Service for the wedding party
+    required: true
+    options:
+      hair_and_makeup: { label: Hair and makeup, price: { amount: 140, per: party_size } }
+      makeup_only: { label: Makeup only, price: { amount: 85, per: party_size } }
+      hair_only: { label: Hair only, price: { amount: 85, per: party_size } }
+  trial:
+    label: Bridal trial
+    options:
+      bridal_trial: { label: Bridal trial before the wedding, price: 150 }
+
+rules:
+  - id: minimum_party
+    when: { not: { party_size: { gte: 2 } } }
+    block: We book weddings of three or more people (the bride plus two)
+  - id: travel_radius
+    when: { travel_zone: over_80_miles }
+    block: We travel up to 80 miles from the studio
+
+pricing:
+  - id: travel_20_to_50
+    label: Travel (20-50 miles)
+    kind: fee
+    amount: 60
+    when: { travel_zone: miles_20_to_50 }
+    taxable: false
+  - id: travel_50_to_80
+    label: Travel (50-80 miles)
+    kind: fee
+    amount: 120
+    when: { travel_zone: miles_50_to_80 }
+    taxable: false
+  - id: early_call
+    label: Early call (before 7am)
+    kind: surcharge
+    amount: 75
+    when: { ready_before_7am: true }

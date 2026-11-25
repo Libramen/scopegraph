@@ -1,0 +1,36 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Brand identity: $1,500 discovery + tier; an unfinished name needs
+# the naming add-on. No tax.
+defaults:
+  now: '2026-03-02T17:00:00Z'
+scenarios:
+  - name: after the name question, the package is asked
+    offering: brand-identity-package
+    answers: { name_final: true }
+    expect:
+      status: needs_input
+      asks: tier
+
+  - name: Signature package with a final name
+    offering: brand-identity-package
+    answers: { name_final: true }
+    selections: { tier: signature }
+    expect:
+      status: qualified
+      total: 9500 # 1500 discovery + 8000
+
+  - name: an unfinished name surfaces the naming add-on
+    offering: brand-identity-package
+    answers: { name_final: false }
+    selections: { tier: signature }
+    expect:
+      status: needs_input
+      asks: extras
+
+  - name: Complete with naming and an extra revision round
+    offering: brand-identity-package
+    answers: { name_final: false }
+    selections: { tier: complete, extras: [naming, extra_revision_round] }
+    expect:
+      status: qualified
+      total: 22250 # 1500 + 16500 + 3500 + 750

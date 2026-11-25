@@ -1,0 +1,17 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the wellness, beauty & fitness examples. When you copy
+# an offering into your own catalog, bring over what it reads from here: the
+# peak season (group-wellness-retreat).
+name: Example — Wellness, beauty & fitness
+description: >
+  Illustrative spa, studio and mobile beauty business: massage, a spa day,
+  coaching session packs, a group retreat, wedding hair and makeup, and
+  private group classes. Prices are examples only.
+currency: USD
+timezone: America/Boise
+
+# No taxRate: many places don't tax services like these. If yours does, add
+# `taxRate:` here; travel and shuttle lines are already `taxable: false`.
+
+seasons:
+  - { name: summer_peak, kind: peak, from: '06-01', to: '08-31', description: Summer retreat season }

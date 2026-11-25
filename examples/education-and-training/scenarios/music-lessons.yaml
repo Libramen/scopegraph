@@ -1,0 +1,44 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Music lessons: $35 per 30-minute lesson (+$15 for 45, +$30 for 60), 5% off
+# a 10-lesson term, 10% off a 30-lesson year, $25 registration for new
+# students (never discounted).
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: one 45-minute lesson for a returning student
+    offering: music-lessons
+    answers: { instrument: guitar, student_age: 14, lesson_length: min_45, lessons: 1, new_student: false }
+    expect:
+      status: qualified
+      total: 50
+
+  - name: a 10-week term of 30-minute lessons for a new student
+    offering: music-lessons
+    answers: { instrument: piano, student_age: 8, lesson_length: min_30, lessons: 10, new_student: true }
+    expect:
+      status: qualified
+      total: 357.5 # 350 - 17.50 + 25 registration
+      lines:
+        - { label: Term discount (5%), amount: -17.5 }
+        - { label: Registration fee, amount: 25 }
+
+  - name: a 30-week year of hour lessons
+    offering: music-lessons
+    answers: { instrument: violin, student_age: 35, lesson_length: min_60, lessons: 30, new_student: false }
+    expect:
+      status: qualified
+      total: 1755 # 30 x 65 - 10%
+
+  - name: a six-year-old cannot book 45 minutes
+    offering: music-lessons
+    answers: { instrument: piano, student_age: 6, lesson_length: min_45 }
+    expect:
+      status: blocked
+      rule: young_students_30_min
+
+  - name: twelve lessons is not a term size
+    offering: music-lessons
+    answers: { instrument: drums, student_age: 12, lesson_length: min_30, lessons: 12 }
+    expect:
+      status: blocked
+      rule: term_sizes

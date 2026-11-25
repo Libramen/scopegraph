@@ -1,0 +1,3 @@
+# Always check text files out with LF line endings (Windows included): the
+# schema freshness tests and YAML comparisons expect them.
+* text=auto eol=lf

@@ -1,0 +1,38 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Retainer: 4-hour base ($1,200/month), larger tiers as the difference, 10%
+# off for a 12-month commitment. Each quote is one month.
+defaults:
+  now: '2026-03-02T14:00:00Z'
+scenarios:
+  - name: commitment is asked, then the hours tier
+    offering: advisory-retainer
+    answers: { commitment: month_to_month }
+    expect:
+      status: needs_input
+      asks: hours
+
+  - name: 8 hours month to month
+    offering: advisory-retainer
+    answers: { commitment: month_to_month }
+    selections: { hours: hours_8 }
+    expect:
+      status: qualified
+      total: 2200
+
+  - name: 16 hours on a 12-month commitment with priority response
+    offering: advisory-retainer
+    answers: { commitment: twelve_months }
+    selections: { hours: hours_16, extras: [priority_response] }
+    expect:
+      status: qualified
+      total: 4050 # 1200 + 2800 + 500 = 4500, minus 10%
+      lines:
+        - { label: 12-month commitment discount, amount: -450 }
+
+  - name: priority response is not sold with 4 hours
+    offering: advisory-retainer
+    answers: { commitment: month_to_month }
+    selections: { hours: hours_4, extras: [priority_response] }
+    expect:
+      status: blocked
+      rule: priority_needs_8_hours

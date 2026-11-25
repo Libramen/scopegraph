@@ -1,0 +1,67 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: tutors and tutoring agencies selling hours, cheaper in packs.
+# Copy to catalog/offerings/, then change the hourly rate, the level and
+# subject premiums, the pack discounts and what you won't teach.
+kind: product
+name: Private Tutoring
+description: >
+  One-to-one tutoring online or in person, from elementary school to
+  college. Hourly, with a lower rate for 10- and 20-hour packs.
+category: Tutoring
+keywords: [tutoring, tutor, homework help, test prep, sat, math]
+
+# Elementary and middle school rate.
+price:
+  amount: 60
+  per: hours
+
+ask:
+  subject:
+    type: select
+    label: Which subject?
+    options: [math, english, science, languages, test_prep]
+  level:
+    type: select
+    label: What level is the student?
+    options: [elementary, middle_school, high_school, college]
+  hours:
+    type: integer
+    label: How many hours are you booking?
+    description: 10 hours or more is a pack with a lower hourly rate.
+    min: 1
+    max: 60
+    role: quantity
+
+rules:
+  - id: college_subjects
+    when: { level: college, subject: { not_in: [math, science] } }
+    block: We tutor college students in math and science only.
+
+pricing:
+  - id: high_school_rate
+    label: High school rate
+    kind: addon
+    amount: 15
+    per: hours
+    when: { level: high_school }
+  - id: college_rate
+    label: College rate
+    kind: addon
+    amount: 30
+    per: hours
+    when: { level: college }
+  - id: test_prep_rate
+    label: Test prep specialist
+    kind: addon
+    amount: 20
+    per: hours
+    when: { subject: test_prep }
+  # Pack tiers: every hour in the booking gets its pack's discount.
+  - id: pack_discount
+    label: Pack discount
+    kind: discount
+    per: hours
+    tiers:
+      - { from: 0, to: 9, amount: 0 }
+      - { from: 10, to: 19, amount: 5 }
+      - { from: 20, amount: 10 }

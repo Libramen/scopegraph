@@ -1,0 +1,58 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: DJs, bands and other entertainers booked for a set length.
+# Copy to catalog/offerings/, then change the package price and included
+# hours, the extra-hour rate, the free-travel radius and per-mile rate, and
+# the add-ons.
+kind: product
+name: Event DJ
+description: A DJ with sound system and dance-floor lighting for weddings, parties and corporate events. Four hours of playing time included; extra hours, ceremony sound and uplighting are add-ons. Travel beyond 30 miles is charged per mile, up to 150 miles.
+category: Entertainment
+keywords: [dj, wedding dj, party dj, entertainment, disco, sound system]
+date: required
+minNoticeHours: 168
+
+price: 900 # four hours playing time, sound system, dance-floor lights
+
+ask:
+  added_hours:
+    type: integer
+    label: How many hours beyond the included four (0 if none)?
+    min: 0
+    role: quantity
+  travel_miles:
+    type: integer
+    label: How many miles is the venue from our base?
+    min: 0
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      ceremony_sound: { label: Ceremony sound and microphone, price: 250 }
+      uplighting: { label: Uplighting (12 lights), price: 300 }
+      generator: { label: Quiet generator for outdoor sites, price: 175 }
+
+rules:
+  - id: max_playing_time
+    when: { not: { added_hours: { lte: 4 } } }
+    block: We play at most eight hours in one booking.
+  - id: travel_radius
+    when: { not: { travel_miles: { lte: 150 } } }
+    block: We travel up to 150 miles from our base.
+
+pricing:
+  - id: added_hours
+    label: Extra playing time
+    kind: addon
+    amount: 175
+    per: added_hours
+    when: { added_hours: { gt: 0 } }
+    reason: Per hour beyond four
+  - id: travel
+    label: Travel
+    kind: fee
+    formula: (travel_miles - 30) * 2
+    when: { travel_miles: { gt: 30 } } # the gate keeps the formula positive
+    taxable: false
+    reason: $2 per mile beyond 30 miles

@@ -1,0 +1,41 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# A product with one flat price. It repeats the group lesson's cold-water and
+# tide rules so it can be sold on its own; inside the package both copies
+# apply (see first-wave-weekend.yaml).
+kind: product
+name: Private Surf Session
+description: >
+  Ninety minutes with your own instructor, for one surfer or two. One price
+  either way.
+category: Lessons
+keywords: [surf, private, one-to-one]
+date: required
+minNoticeHours: 48
+
+price: 160 # flat: the same for one surfer or two
+
+ask:
+  # Word for word the same as on surf-lesson, so the package merges each pair
+  # into one question (same-named parameters must match exactly). The cap of
+  # two is a rule rather than `max: 2`, so a bigger group is told why.
+  surfers:
+    type: integer
+    label: How many people are surfing?
+    min: 1
+    max: 10
+    role: quantity
+  cold_water_ok:
+    type: boolean
+    label: Is everyone happy to spend two hours in 50-58°F water?
+
+rules:
+  - id: up_to_two
+    when: { not: { surfers: { lte: 2 } } }
+    # Phrased so it also makes sense when the package reports it.
+    block: Private sessions take one or two surfers; groups of three or more can book the Linda Mar Group Lesson instead
+  - id: cold_water
+    when: { not: { cold_water_ok: true } }
+    block: The water at Linda Mar stays between 50 and 58°F all year, so every surfer needs to be comfortable in the cold
+  - id: tide_window
+    when: { tide_ft: { gt: 5.5 } }
+    block: We don't teach when the tide is above 5.5 ft, because the shorebreak gets too steep

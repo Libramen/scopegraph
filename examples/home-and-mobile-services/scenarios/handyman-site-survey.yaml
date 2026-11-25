@@ -1,0 +1,28 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# A flat $75 visit: the qualified result is what carries the handoff link.
+defaults:
+  now: '2026-03-02T15:00:00Z'
+scenarios:
+  - name: a deck project books the survey visit
+    offering: handyman-site-survey
+    date: '2026-03-10'
+    answers: { project_type: deck_or_fence, project_summary: Replace a 12 x 16 ft deck with composite boards }
+    expect:
+      status: qualified
+      total: 75
+
+  - name: the project summary is asked after the project type
+    offering: handyman-site-survey
+    date: '2026-03-10'
+    answers: { project_type: remodel }
+    expect:
+      status: needs_input
+      asks: project_summary
+
+  - name: a one-word summary is too short
+    offering: handyman-site-survey
+    date: '2026-03-10'
+    answers: { project_type: other, project_summary: deck }
+    expect:
+      status: invalid
+      error: answers.project_summary

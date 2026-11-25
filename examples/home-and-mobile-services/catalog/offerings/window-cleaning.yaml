@@ -1,0 +1,76 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: residential window cleaning priced per window, cheaper per
+# window on bigger jobs. Copy to catalog/offerings/, then change the trip
+# charge, the per-window tiers, the 3-storey limit and the job minimum.
+kind: product
+name: Window cleaning
+description: >
+  Residential window cleaning from ladders, up to three storeys. Priced per
+  window with a lower rate on larger homes; interior panes and screens are
+  extra. $120 job minimum.
+category: Cleaning
+keywords: [windows, window cleaning, gutters, screens]
+date: required
+minNoticeHours: 24
+
+price: 40 # trip charge, on every job
+
+ask:
+  windows:
+    type: integer
+    label: How many windows (count each pane you can see from outside)?
+    min: 1
+    max: 150
+    role: quantity
+  storeys:
+    type: integer
+    label: How many storeys is the building?
+    min: 1
+    max: 50
+
+choose:
+  sides:
+    label: Which sides?
+    mode: single
+    required: true
+    options:
+      exterior_only: { label: Outside only }
+      inside_and_out:
+        label: Inside and out
+        price: { amount: 4, per: windows }
+  extras:
+    label: Add-ons
+    mode: multi
+    required: false
+    options:
+      screens: { label: Screen cleaning, price: { amount: 2, per: windows } }
+      hard_water: { label: Hard-water stain treatment, price: 45 }
+
+rules:
+  - id: max_storeys
+    when: { not: { storeys: { lte: 3 } } }
+    block: >
+      We work from ladders up to three storeys. Taller buildings need rope
+      access or a lift, which we don't offer.
+
+pricing:
+  # Volume tiers: every window is charged at the rate of the tier the
+  # window count falls in (20 windows -> 20 x $7).
+  - id: per_window
+    label: Windows
+    kind: addon
+    per: windows
+    tiers:
+      - { from: 0, to: 15, amount: 8 }
+      - { from: 16, to: 30, amount: 7 }
+      - { from: 31, amount: 6 }
+  - id: third_storey
+    label: Third-storey ladder work
+    kind: surcharge
+    amount: 40
+    when: { storeys: { gte: 3 } }
+    reason: Extension ladders and a second person on site
+
+minimumSpend:
+  amount: 120
+  mode: top_up # small jobs are charged up to the minimum, not refused

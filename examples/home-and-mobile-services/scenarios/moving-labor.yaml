@@ -1,0 +1,59 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# $120/hour for two movers, +$55/hour per extra mover (as crew options),
+# $25 per flight of stairs with no elevator, 2-hour minimum, 48h notice.
+defaults:
+  now: '2026-03-02T15:00:00Z' # a Monday
+scenarios:
+  - name: three movers for three hours, elevator building
+    offering: moving-labor
+    date: '2026-03-05'
+    answers: { hours: 3, access: elevator, piano_or_safe: false }
+    selections: { crew: three_movers }
+    expect:
+      status: qualified
+      total: 525 # 3 x 120 + 3 x 55
+
+  - name: stairs-only access opens the flights question
+    offering: moving-labor
+    date: '2026-03-05'
+    answers: { hours: 4, access: stairs_only, piano_or_safe: false }
+    selections: { crew: two_movers }
+    expect:
+      status: needs_input
+      asks: flights_of_stairs
+
+  - name: two flights of stairs and furniture disassembly
+    offering: moving-labor
+    date: '2026-03-05'
+    answers: { hours: 4, access: stairs_only, flights_of_stairs: 2, piano_or_safe: false }
+    selections: { crew: two_movers, extras: [disassembly] }
+    expect:
+      status: qualified
+      total: 570 # 4 x 120 + 2 x 25 stairs + 40 disassembly
+      lines:
+        - { label: Stairs (per flight), amount: 50 }
+
+  - name: one hour is under the 2-hour minimum
+    offering: moving-labor
+    date: '2026-03-05'
+    answers: { hours: 1 }
+    expect:
+      status: blocked
+      rule: min_hours
+
+  - name: pianos and safes are refused
+    offering: moving-labor
+    date: '2026-03-05'
+    answers: { hours: 3, access: ground_level, piano_or_safe: true }
+    expect:
+      status: blocked
+      rule: no_specialist_items
+
+  - name: less than 48 hours notice is too soon
+    offering: moving-labor
+    date: '2026-03-03'
+    answers: { hours: 3, access: elevator, piano_or_safe: false }
+    selections: { crew: two_movers }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

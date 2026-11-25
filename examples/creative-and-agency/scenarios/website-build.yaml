@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Website: $3,000 base + $450 per inner page + CMS + integrations; 30% rush
+# for launches inside 6 weeks; under 3 weeks refused. Date = launch date.
+defaults:
+  now: '2026-03-02T17:00:00Z'
+scenarios:
+  - name: the launch date is asked first
+    offering: website-build
+    expect:
+      status: needs_input
+      asks: date
+
+  - name: the CMS is a required choice
+    offering: website-build
+    date: '2026-05-15'
+    answers: { inner_pages: 8 }
+    expect:
+      status: needs_input
+      asks: cms
+
+  - name: eight pages on Webflow with CRM forms, ten weeks out
+    offering: website-build
+    date: '2026-05-15'
+    answers: { inner_pages: 8 }
+    selections: { cms: webflow, integrations: [crm_forms] }
+    expect:
+      status: qualified
+      total: 7200 # 3000 + 8 x 450 + 600
+
+  - name: the same site launching in five weeks pays the rush
+    offering: website-build
+    date: '2026-04-06'
+    answers: { inner_pages: 8 }
+    selections: { cms: webflow, integrations: [crm_forms] }
+    expect:
+      status: qualified
+      total: 9360 # 7200 + 30%
+      lines:
+        - { label: Rush launch, amount: 2160 }
+
+  - name: a one-page WordPress site has no inner-page line
+    offering: website-build
+    date: '2026-05-15'
+    answers: { inner_pages: 0 }
+    selections: { cms: wordpress }
+    expect:
+      status: qualified
+      total: 4200
+
+  - name: over 40 pages goes to a proposal
+    offering: website-build
+    date: '2026-05-15'
+    answers: { inner_pages: 60 }
+    expect:
+      status: blocked
+      rule: max_pages
+
+  - name: a launch in eight days is too soon
+    offering: website-build
+    date: '2026-03-10'
+    answers: { inner_pages: 3 }
+    selections: { cms: webflow }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON

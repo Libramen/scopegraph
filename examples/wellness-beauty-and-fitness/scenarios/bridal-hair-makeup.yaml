@@ -1,0 +1,50 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Wedding hair & makeup: $295 bride, per-person party services, trial,
+# travel zones (pass-through), early-call fee, minimum of bride plus two.
+# No sales tax. 2026-06-06 is a Saturday.
+defaults:
+  now: '2026-01-01T00:00:00Z'
+scenarios:
+  - name: bride plus four, hair and makeup, trial, 35 miles away
+    offering: bridal-hair-makeup
+    date: '2026-06-06'
+    answers: { party_size: 4, travel_zone: miles_20_to_50, ready_before_7am: false }
+    selections: { party_service: hair_and_makeup, trial: bridal_trial }
+    expect:
+      status: qualified
+      total: 1065 # 295 + 560 + 150 trial + 60 travel
+      lines:
+        - { label: Travel (20-50 miles), amount: 60 }
+
+  - name: bride plus three, makeup only, local, early call
+    offering: bridal-hair-makeup
+    date: '2026-06-06'
+    answers: { party_size: 3, travel_zone: within_20_miles, ready_before_7am: true }
+    selections: { party_service: makeup_only }
+    expect:
+      status: qualified
+      total: 625 # 295 + 255 + 75 early call
+
+  - name: the early-call question comes before the service choice
+    offering: bridal-hair-makeup
+    date: '2026-06-06'
+    answers: { party_size: 3, travel_zone: within_20_miles }
+    expect:
+      status: needs_input
+      asks: ready_before_7am
+
+  - name: bride plus one is under the minimum
+    offering: bridal-hair-makeup
+    date: '2026-06-06'
+    answers: { party_size: 1 }
+    expect:
+      status: blocked
+      rule: minimum_party
+
+  - name: over 80 miles is outside the travel radius
+    offering: bridal-hair-makeup
+    date: '2026-06-06'
+    answers: { party_size: 4, travel_zone: over_80_miles }
+    expect:
+      status: blocked
+      rule: travel_radius

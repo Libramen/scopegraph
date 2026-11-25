@@ -1,0 +1,11 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: the facial inside spa-day-package; copy it with the package.
+# `bookable: false` = sold only inside the package. Change the price and
+# set it to true to sell it on its own too.
+kind: product
+name: Express Facial
+description: A 30-minute cleanse, exfoliation and mask, included in the spa day.
+category: Treatments
+keywords: [facial, skin care]
+bookable: false
+price: 85

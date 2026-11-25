@@ -1,0 +1,30 @@
+# yaml-language-server: $schema=../../../schema/business.schema.json
+# Shared settings for the pet services examples. Copy the parts you need
+# into your own catalog/business.yaml: set your name, timezone, holiday
+# dates (Thanksgiving moves every year) and booking URL. No taxRate: add one
+# only if your state taxes pet care.
+name: Example — Pet services
+description: >
+  Illustrative catalog of pet care services: mobile dog grooming, dog
+  walking, dog boarding and pet sitting home visits. Prices are examples,
+  not market rates.
+currency: USD
+timezone: America/Boise
+
+# Holiday peak windows drive the `isPeak` value the boarding and pet
+# sitting holiday rates key off. MM-DD recurs yearly; YYYY-MM-DD is one-off.
+seasons:
+  - name: thanksgiving
+    kind: peak
+    from: '2026-11-25'
+    to: '2026-11-29'
+    description: Thanksgiving week 2026 (update every year)
+  - name: winter_holidays
+    kind: peak
+    from: '12-19'
+    to: '01-03'
+    description: Christmas to New Year
+
+handoff:
+  url: https://book.petservices.example/request?offering={offering}&currency={currency}&{params}
+  message: Confirm the dates and your pet's details on our booking page.

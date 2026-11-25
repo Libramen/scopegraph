@@ -1,0 +1,48 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# Headshots: $95 per person; on site adds a $450 setup, $2/mile and a
+# 5-person minimum; nothing beyond 60 miles.
+defaults:
+  now: '2026-03-02T17:00:00Z'
+scenarios:
+  - name: on-site sessions ask the distance
+    offering: corporate-headshots
+    answers: { people: 12, location: your_office }
+    expect:
+      status: needs_input
+      asks: distance_miles
+
+  - name: twelve people at an office 10 miles out
+    offering: corporate-headshots
+    answers: { people: 12, location: your_office, distance_miles: 10 }
+    expect:
+      status: qualified
+      total: 1610 # 12 x 95 + 450 setup + 20 mileage
+
+  - name: detailed retouching for the same team
+    offering: corporate-headshots
+    answers: { people: 12, location: your_office, distance_miles: 10 }
+    selections: { retouching: detailed }
+    expect:
+      status: qualified
+      total: 2030 # 1610 + 12 x 35
+
+  - name: three people at the studio
+    offering: corporate-headshots
+    answers: { people: 3, location: our_studio }
+    expect:
+      status: qualified
+      total: 285
+
+  - name: three people on site is below the minimum
+    offering: corporate-headshots
+    answers: { people: 3, location: your_office }
+    expect:
+      status: blocked
+      rule: onsite_minimum
+
+  - name: 80 miles is outside the travel radius
+    offering: corporate-headshots
+    answers: { people: 20, location: your_office, distance_miles: 80 }
+    expect:
+      status: blocked
+      rule: travel_radius

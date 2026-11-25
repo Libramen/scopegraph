@@ -1,0 +1,157 @@
+# yaml-language-server: $schema=../../../schema/scenarios.schema.json
+# The group lesson, $95 per surfer, 9% tax. Each scenario is one engine call
+# with the answers, selections, date and facts given here, checked against
+# `expect`. Amounts are in dollars. Run them with: npm run scenarios
+# Board and suit hire belong to the package: see first-wave-weekend.yaml.
+#
+# `now` is Monday 2026-02-02, 09:00 in Pacifica. Lessons need 48 hours'
+# notice. 2026-02-05 is a Thursday, 2026-02-07 a Saturday; 2026-07-08 is a
+# Wednesday and 2026-07-11 a Saturday, both inside summer_break.
+# Facts are set per scenario so that one of them can leave `tide_ft` out.
+defaults:
+  now: '2026-02-02T17:00:00Z'
+scenarios:
+  # ── the order questions come in ────────────────────────────────────────
+  - name: without a date, the date is asked first
+    offering: surf-lesson
+    facts: { tide_ft: 3 }
+    expect:
+      status: needs_input
+      asks: date
+
+  - name: with a date, the head count comes next
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    expect:
+      status: needs_input
+      asks: surfers
+
+  - name: with a head count, the cold-water question comes next
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2 }
+    expect:
+      status: needs_input
+      asks: cold_water_ok
+
+  - name: once the cold water is fine, surfing history is asked
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true }
+    expect:
+      status: needs_input
+      asks: surf_history
+
+  - name: no tide reading from the server means no quote
+    offering: surf-lesson
+    date: '2026-02-05'
+    # `tide_ft` is required and nothing supplies it here
+    answers: { surfers: 2, cold_water_ok: true, surf_history: first_time }
+    expect:
+      status: blocked
+      reason: FACTS_UNAVAILABLE
+
+  # ── refusals ────────────────────────────────────────────────────────────
+  - name: a group that is not OK in cold water is turned away (cold_water)
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 3, cold_water_ok: false }
+    expect:
+      status: blocked
+      rule: surf-lesson.cold_water
+
+  - name: a 6.2 ft tide is too high to teach (tide_window)
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 6.2 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: blocked
+      rule: surf-lesson.tide_window
+
+  # ── prices ──────────────────────────────────────────────────────────────
+  - name: two first-timers on a Thursday pay the per-surfer price plus tax
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 5.5 } # exactly 5.5 ft is still fine
+    answers: { surfers: 2, cold_water_ok: true, surf_history: first_time }
+    expect:
+      status: qualified
+      total: 207.1 # 95 x 2 = 190; tax 17.10
+      tax: 17.1
+
+  - name: a Saturday adds $10 per surfer
+    offering: surf-lesson
+    date: '2026-02-07'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: first_time }
+    expect:
+      status: qualified
+      total: 228.9 # 190 + 20 weekend = 210; tax 18.90
+      lines:
+        - { label: Weekend surcharge, amount: 20 }
+
+  - name: a summer-holiday Wednesday adds 20% of the lesson price
+    offering: surf-lesson
+    date: '2026-07-08'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: qualified
+      total: 248.52 # 190 + 38 summer = 228; tax 20.52
+      lines:
+        - { label: Summer holiday surcharge, amount: 38 }
+
+  - name: a summer-holiday Saturday adds both surcharges
+    offering: surf-lesson
+    date: '2026-07-11'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: qualified
+      total: 270.32 # 190 + 20 weekend + 38 summer = 248; tax 22.32
+      lines:
+        - { label: Weekend surcharge, amount: 20 }
+        - { label: Summer holiday surcharge, amount: 38 }
+
+  # ── dates ───────────────────────────────────────────────────────────────
+  - name: tomorrow is inside the 48-hour notice period
+    offering: surf-lesson
+    date: '2026-02-03'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: blocked
+      reason: DATE_TOO_SOON
+
+  - name: last week cannot be booked
+    offering: surf-lesson
+    date: '2026-01-30'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: blocked
+      reason: DATE_IN_PAST
+
+  # ── answers that don't fit the question ─────────────────────────────────
+  - name: a yes/no question rejects other answers
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 2, cold_water_ok: sometimes, surf_history: whitewater }
+    expect:
+      status: invalid
+      error: answers.cold_water_ok
+
+  - name: twelve surfers is over the lesson's limit of ten
+    offering: surf-lesson
+    date: '2026-02-05'
+    facts: { tide_ft: 3 }
+    answers: { surfers: 12, cold_water_ok: true, surf_history: whitewater }
+    expect:
+      status: invalid
+      error: answers.surfers

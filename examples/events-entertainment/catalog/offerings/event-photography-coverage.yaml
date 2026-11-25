@@ -1,0 +1,49 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: event and party photographers charging by the hour of coverage.
+# Copy to catalog/offerings/, then change the hourly rate, the minimum
+# hours, the assistant photographer's rate and threshold, and the album
+# prices.
+kind: product
+name: Event Photography
+description: Hourly photo coverage of parties, galas and corporate events, with an edited online gallery within ten days. Two-hour minimum; add an assistant photographer and a printed album.
+category: Photography
+keywords: [event photographer, party photography, corporate photography, gala, photographer]
+date: required
+minNoticeHours: 72
+
+price: { amount: 275, per: coverage_hours } # includes editing and the online gallery
+
+ask:
+  coverage_hours:
+    type: integer
+    label: How many hours of coverage?
+    min: 1
+    max: 12
+    role: quantity
+  attendees:
+    type: integer
+    label: How many people will attend?
+    min: 1
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      # Per hour: the assistant works the same hours as the lead.
+      assistant_photographer: { label: Assistant photographer, price: { amount: 125, per: coverage_hours } }
+      next_day_preview: { label: 30 preview images the next day, price: 150 }
+  album:
+    label: Printed album
+    options:
+      linen_album: { label: 'Linen-bound album (10x10in, 30 pages)', price: 450 }
+      layflat_album: { label: 'Leather layflat album (12x12in, 40 pages)', price: 900 }
+
+rules:
+  - id: minimum_hours
+    when: { not: { coverage_hours: { gte: 2 } } }
+    block: Coverage is booked for 2 hours or more.
+  - id: large_event_assistant
+    when: { attendees: { gte: 150 } }
+    require: extras.assistant_photographer
+    message: Events of 150 attendees or more need an assistant photographer.

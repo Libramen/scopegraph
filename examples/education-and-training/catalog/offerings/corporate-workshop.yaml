@@ -1,0 +1,75 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: trainers and facilitators running workshops for companies.
+# Copy to catalog/offerings/, then change the per-participant rates, the
+# minimum fee, the largest group and the travel amounts.
+kind: product
+name: Corporate Workshop
+description: >
+  A facilitated half-day or full-day workshop for a team, virtual or at your
+  office, with workbooks and a follow-up summary. Up to 30 participants.
+category: Training
+keywords: [workshop, training, corporate, team, facilitation]
+date: required
+minNoticeHours: 336 # 2 weeks
+
+price:
+  amount: 145
+  per: participants
+
+ask:
+  participants:
+    type: integer
+    label: How many participants?
+    min: 1
+    max: 1000
+    role: quantity
+  format:
+    type: select
+    label: Half day or full day?
+    options: [half_day, full_day]
+  delivery:
+    type: select
+    label: Virtual or at your office?
+    options: [virtual, on_site]
+  travel_zone:
+    # Required, but gated: only asked for on-site workshops.
+    type: select
+    label: Where is the office?
+    options:
+      - { value: local, label: Within 50 miles }
+      - { value: regional, label: Within a day's drive }
+      - { value: national, label: Elsewhere in the US }
+
+rules:
+  - id: ask_travel_zone
+    when: { delivery: on_site }
+    ask: travel_zone
+  - id: max_participants
+    when: { participants: { gt: 30 } }
+    block: Workshops take up to 30 people; book a second session for larger groups.
+
+pricing:
+  - id: full_day
+    label: Full-day rate
+    kind: addon
+    amount: 95
+    per: participants
+    when: { format: full_day }
+  - id: travel_regional
+    label: Facilitator travel (regional)
+    kind: fee
+    amount: 350
+    taxable: false
+    when: { delivery: on_site, travel_zone: regional }
+  - id: travel_national
+    label: Facilitator travel (national)
+    kind: fee
+    amount: 1100
+    taxable: false
+    when: { delivery: on_site, travel_zone: national }
+
+# Small groups pay the minimum: the shortfall is added as a line. The
+# minimum compares the whole pre-tax subtotal, travel included.
+minimumSpend:
+  amount: 2400
+  mode: top_up

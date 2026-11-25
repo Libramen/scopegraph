@@ -1,0 +1,71 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: studios and instructors selling private classes or workshops to
+# groups (team building, hen and stag parties, clubs). Copy to
+# catalog/offerings/, then change the per-person price, the minimum, the
+# class types, the largest group and the off-site fee.
+kind: product
+name: Private Group Fitness Class
+description: >
+  A private 60-minute class for your group, up to 30 people: yoga, HIIT,
+  barre, mat Pilates or aerial yoga (up to 10, studio only). At our studio
+  or yours. Minimum charge $300; weekends cost 20% more.
+category: Classes
+keywords: [group class, private class, yoga, hiit, team building, workshop]
+date: required
+minNoticeHours: 72
+
+price:
+  amount: 30
+  per: participants
+
+# Small groups pay the instructor's minimum: top_up adds the shortfall as a
+# line instead of refusing.
+minimumSpend:
+  amount: 300
+  mode: top_up
+
+ask:
+  participants:
+    type: integer
+    label: How many people will take part?
+    min: 1
+    max: 500
+    role: quantity
+
+choose:
+  class_type:
+    label: Class
+    required: true
+    options:
+      yoga: { label: Yoga }
+      hiit: { label: HIIT }
+      barre: { label: Barre }
+      pilates_mat: { label: Mat Pilates }
+      aerial_yoga: { label: Aerial yoga, price: { amount: 15, per: participants } }
+  location:
+    label: Where
+    required: true
+    options:
+      our_studio: { label: At our studio }
+      your_venue: { label: At your office or venue, price: 120, taxable: false }
+
+rules:
+  - id: max_participants
+    when: { not: { participants: { lte: 30 } } }
+    block: Private classes take up to 30 people
+  - id: aerial_rigs
+    when: { all: [ { selected: class_type.aerial_yoga }, { not: { participants: { lte: 10 } } } ] }
+    block: Aerial yoga has 10 rigs; book two classes for a bigger group
+  - id: aerial_in_studio
+    when: { selected: class_type.aerial_yoga }
+    exclude: location.your_venue
+    message: Aerial yoga needs our rigging, so it runs at the studio only
+
+pricing:
+  - id: weekend
+    label: Weekend premium
+    kind: surcharge
+    percent: 20
+    basis: base # 20% of the class price, not of the add-ons
+    when: { isWeekend: true }
+    reason: Saturday and Sunday classes

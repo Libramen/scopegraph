@@ -1,0 +1,69 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: fitness trainers, physio-led gyms and coaches selling session
+# packs. Copy to catalog/offerings/, then change the per-session rate, the
+# pack sizes (in the rule AND the tier ladder) and the home-visit fee.
+kind: product
+name: Fitness Coaching
+description: >
+  One-to-one or partner fitness coaching at the studio or at home. Buy a
+  single session or a pack of 5, 10 or 20; bigger packs cost less per
+  session.
+category: Training
+keywords: [fitness coaching, fitness trainer, coaching, fitness, session pack]
+
+price:
+  amount: 90
+  per: sessions
+
+ask:
+  sessions:
+    type: integer
+    label: How many sessions? (1, or a pack of 5, 10 or 20)
+    min: 1
+    max: 100
+    role: quantity
+  cleared_for_exercise:
+    type: boolean
+    label: >
+      Are you cleared for moderate exercise (no doctor has told you to avoid
+      it)?
+
+choose:
+  format:
+    label: Format
+    required: true
+    options:
+      one_to_one: { label: One-to-one }
+      partner: { label: Partner session (2 people), price: { amount: 30, per: sessions } }
+  location:
+    label: Where
+    required: true
+    options:
+      studio: { label: At our studio }
+      home_visit:
+        label: At your home (within 10 miles)
+        price: { amount: 25, per: sessions }
+        taxable: false # trainer travel
+
+rules:
+  - id: pack_sizes
+    when: { not: { sessions: [1, 5, 10, 20] } }
+    block: We sell single sessions or packs of 5, 10 or 20
+  - id: cleared_to_train
+    when: { not: { cleared_for_exercise: true } }
+    block: >
+      Please check with your doctor first; we can start as soon as they give
+      you the go-ahead.
+
+pricing:
+  # The pack size picks the per-session saving, applied to every session in
+  # the pack. Tiers cover every quantity (the 0 tier keeps singles valid).
+  - id: pack_saving
+    label: Pack saving
+    kind: discount
+    per: sessions
+    tiers:
+      - { from: 0, to: 4, amount: 0 }
+      - { from: 5, to: 9, amount: 8 }
+      - { from: 10, to: 19, amount: 13 }
+      - { from: 20, amount: 18 }

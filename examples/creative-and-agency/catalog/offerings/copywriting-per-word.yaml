@@ -1,0 +1,65 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: copywriters and content agencies pricing by the word. Copy to
+# catalog/offerings/, then change the per-word tiers, the technical premium
+# and the minimum order.
+kind: product
+name: Copywriting
+description: >
+  Researched, edited copy for web pages, articles, emails or technical
+  content, priced per word with volume rates. One round of revisions
+  included.
+category: Content
+keywords: [copywriting, content, writing, blog, web copy]
+
+# Brief and research call.
+price: 150
+
+ask:
+  word_count:
+    type: integer
+    label: About how many words in total?
+    min: 1
+    max: 100000
+    role: quantity
+  content_type:
+    type: select
+    label: What kind of copy?
+    options: [web_pages, blog_articles, email_sequence, technical]
+
+choose:
+  extras:
+    label: Extras
+    mode: multi
+    options:
+      seo_research: { label: Keyword research and SEO brief, price: 250 }
+
+rules:
+  - id: max_words
+    when: { word_count: { gt: 20000 } }
+    block: >
+      Over 20,000 words is a content programme; email hello@studio.example
+      for a proposal.
+
+pricing:
+  # Volume tiers: the entire word count is charged at the rate of the tier
+  # it lands in, so 2,000 words costs less than 1,999.
+  - id: writing
+    label: Writing
+    kind: addon
+    per: word_count
+    order: 10
+    tiers:
+      - { from: 0, to: 1999, amount: 0.5 }
+      - { from: 2000, to: 4999, amount: 0.4 }
+      - { from: 5000, amount: 0.32 }
+  - id: technical_premium
+    label: Technical subject premium
+    kind: surcharge
+    percent: 25
+    when: { content_type: technical }
+    order: 50 # after writing (10), before option prices (100): brief + writing only
+    reason: Subject-matter research and expert review
+
+minimumSpend:
+  amount: 400
+  mode: top_up

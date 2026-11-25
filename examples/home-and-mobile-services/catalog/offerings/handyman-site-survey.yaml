@@ -1,0 +1,32 @@
+# yaml-language-server: $schema=../../../../schema/offering.schema.json
+# Use case: the paid front door for jobs too big or vague to price by the
+# hour. It qualifies at a flat fee, so the buyer gets the handoff link to
+# book the visit; the project itself is quoted by a person afterwards. Copy
+# to catalog/offerings/, then change the fee and the project types.
+kind: product
+name: Handyman site survey
+description: >
+  A 45-minute visit to measure up and scope a larger project (remodel,
+  deck, fence, flooring). You get a written quote for the project after
+  the visit.
+category: Repairs
+keywords: [site survey, estimate, quote visit, remodel, project]
+date: required
+minNoticeHours: 24
+
+price: 75
+
+ask:
+  project_type:
+    type: select
+    label: What kind of project?
+    options:
+      - { value: remodel, label: Kitchen or bathroom remodel }
+      - { value: deck_or_fence, label: Deck or fence }
+      - { value: flooring, label: Flooring }
+      - { value: other, label: Something else }
+  project_summary:
+    type: string
+    label: Describe the project in a sentence or two
+    min: 10
+    max: 500
